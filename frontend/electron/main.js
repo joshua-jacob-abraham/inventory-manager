@@ -97,14 +97,14 @@ function createWindow() {
 
   mainWindow.loadURL(startUrl);
 
-  mainWindow.webContents.on("before-input-event", (event, input) => {
-    if (input.control && input.shift && input.key.toLowerCase() === "i") {
-      event.preventDefault();
-    }
-    if (input.key === "F12") {
-      event.preventDefault();
-    }
-  });
+  // mainWindow.webContents.on("before-input-event", (event, input) => {
+  //   if (input.control && input.shift && input.key.toLowerCase() === "i") {
+  //     event.preventDefault();
+  //   }
+  //   if (input.key === "F12") {
+  //     event.preventDefault();
+  //   }
+  // });
 
   mainWindow.webContents.on("context-menu", (event) => {
     event.preventDefault(); // Disable right-click menu

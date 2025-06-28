@@ -13,12 +13,6 @@
   line-height: 1;
 }
 
-/* .checkbox-wrapper-521 *,
-.checkbox-wrapper-521 ::after,
-.checkbox-wrapper-521 ::before {
-  box-sizing: border-box;
-} */
-
 .checkbox-wrapper-521 .item .cbx {
   position: relative;
   top: 1px;
@@ -138,7 +132,7 @@
   border-radius: 5px;
   display: flex;
   justify-content: space-between;
-  padding: 10px 12px;
+  padding: 9.6px 12px;
   font-size: 20px;
 }
 

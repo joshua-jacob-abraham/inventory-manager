@@ -10,7 +10,8 @@
   font-family: Arial, sans-serif;
   user-select: none;
   -webkit-app-region: drag;
-  position: absolute;
+  position: fixed;
+  z-index: 1000;
   top: 0px;
   left: 0px;
   right: 0px;
@@ -29,6 +30,7 @@
 .window-controls button {
   background: transparent;
   border: none;
+  outline: none;
   color: white;
   cursor: pointer;
   line-height: 1;
@@ -36,6 +38,10 @@
 
 .window-controls button:hover {
   background: rgba(255, 255, 255, 0.2);
+}
+
+.window-controls button:focus {
+  outline: none;
 }
 
 .minimize{
