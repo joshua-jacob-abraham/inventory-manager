@@ -107,7 +107,7 @@ function createWindow() {
   // });
 
   mainWindow.webContents.on("context-menu", (event) => {
-    event.preventDefault(); // Disable right-click menu
+    event.preventDefault();
   });
 
   ipcMain.on("window:minimize", () => {

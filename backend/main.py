@@ -7,7 +7,7 @@ from services import submit_new_stock,add_design_temp,temp_stock_data,from_shelf
 from database import get_db_connection
 from datetime import datetime
 from openpyxl.styles import Font, Alignment
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 import io
 import pandas as pd
 
@@ -20,6 +20,17 @@ app.add_middleware(
     allow_methods=["*"],  
     allow_headers=["*"],  
 )
+
+#health check
+@app.get("/health/db")
+async def check_db_health():
+	try:
+		connection = get_db_connection()
+		connection.ping(reconnect=True)
+		connection.close()
+		return {"mysql": "ok"}
+	except Exception as e:
+		return JSONResponse(status_code=500, content={"mysql": "down", "error": str(e)})	
 
 #add new items
 @app.post("/add/new")

@@ -1,20 +1,50 @@
 import "../styles/Dash.css";
-import { useContext } from "react";
-import Heading from "../components/Heading.jsx"
+import { useContext, useState, useEffect } from "react";
+import Heading from "../components/Heading.jsx";
 import Login from "../components/Login.jsx";
 import "../styles/Home.css";
+import axios from "axios";
 import { BrandNameContext } from "../contexts/BrandNameContext.jsx";
 
 function Home() {
-	const { brandName, setBrandName } = useContext(BrandNameContext);
+  const { brandName, setBrandName } = useContext(BrandNameContext);
+  const [isHealthy, setIsHealthy] = useState(null);
+
+  useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        const res = await axios.get("http://localhost:8000/health/db");
+
+        if (res.data.mysql === "ok") {
+          setIsHealthy(true);
+        } else {
+          alert("Unexpected response from backend. Try restarting.");
+          setIsHealthy(false);
+        }
+      } catch (err) {
+        if (err.response) {
+          // Server responded with an error.
+          alert(`DB issue: ${err.response.data.error || "Unknown error"}`);
+        } else {
+          // No response.
+          alert("Backend not responding. Please restart the app.");
+        }
+        setIsHealthy(false);
+      }
+    };
+
+    checkHealth();
+  }, []);
 
   return (
-		<div className="dashboard">
-			<Heading name={'inventerogenesis'}/>
-			<div className="signupDash">
-				<Login setBrandName={brandName} />
-			</div>
-		</div>
+    isHealthy && (
+      <div className="dashboard">
+        <Heading name={"inventerogenesis"} />
+        <div className="signupDash">
+          <Login setBrandName={brandName} />
+        </div>
+      </div>
+    )
   );
 }
 

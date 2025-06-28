@@ -3,6 +3,7 @@ body {
   margin: 0px;
   display: flex;
   height: 100vh;
+  overflow-x: hidden;
   align-items: center;
   justify-content: center;
   min-width: 1160px;
@@ -11,24 +12,24 @@ body {
 
 /* Scrollbar container */
 ::-webkit-scrollbar {
-  width: 10px; /* Width for vertical scrollbars */
-  height: 10px; /* Height for horizontal scrollbars */
+  width: 10px;
+  height: 10px;
 }
 
 /* Track */
 ::-webkit-scrollbar-track {
-  background: #f0f0f0; /* Light gray track */
+  background: #f0f0f0; 
   border-radius: 50px;
 }
 
 /* Thumb */
 ::-webkit-scrollbar-thumb {
-  background: rgba(197, 106, 106, 0.888); /* Dark gray thumb */
+  background: rgba(197, 106, 106, 0.888); 
   border-radius: 0px;
   border: none;
 }
 
 /* Thumb on hover */
 ::-webkit-scrollbar-thumb:hover {
-  background: rgb(104, 56, 56); /* Darker thumb on hover */
+  background: rgb(104, 56, 56);
 }
