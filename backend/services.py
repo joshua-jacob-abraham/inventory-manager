@@ -308,43 +308,57 @@ def generate_pdf_bytes(brand_name: str ,store_name: str, date: str, action: str,
         leading=18,
         alignment=1,
         textColor="darkgray",
-        spaceAfter=20,
+        spaceAfter=10,
     )
 
     main_heading = Paragraph(brand_name.capitalize(), heading_style)
     sub_heading = Paragraph(f"{store_name.capitalize()} | {formatted_date} | {action.capitalize()} Stock", subheading_style)
 
     # Table data
-    table_data = [["S.No", "Item", "Design Code", "Price", "GST Rate", "HSNCODE", "TAXABLE", "TAX", "Quantity", "Size"]]
+    has_gst = any(item.get("gst_rate", 0) > 0 for item in stock_data)
+
+    if has_gst:
+        table_data = [["S.No", "Item", "Design Code", "Price", "GST Rate", "HSNCODE", "TAXABLE", "TAX", "Quantity", "Size"]]
+    else:
+        table_data = [["S.No", "Item", "Design Code", "Price", "Quantity", "Size"]]
 
     for index, item in enumerate(stock_data, start=1):
-        table_data.append([
-            str(index),
-            item["item"],
-            item["design_code"],
-            f"{item['sp_per_item']:.2f}",
-            item["gst_rate"],
-            item.get("hsncode", "62092000"),
-            f"{item['taxable_amount']:.2f}",
-            f"{item['tax_amount']:.2f}",
-            item["qty"],
-            item["size"]
-        ])
+        if has_gst:
+            table_data.append([
+                str(index),
+                item["item"],
+                item["design_code"],
+                f"{item['sp_per_item']:.2f}",
+                item.get("gst_rate", 0),
+                item.get("hsncode", "62092000"),
+                f"{item.get('taxable_amount', 0):.2f}",
+                f"{item.get('tax_amount', 0):.2f}",
+                item["qty"],
+                item["size"]
+            ])
+        else:
+            table_data.append([
+                str(index),
+                item["item"],
+                item["design_code"],
+                f"{item['sp_per_item']:.2f}",
+                item["qty"],
+                item["size"]
+            ])
 
     num_columns = len(table_data[0])
     colWidths = [available_width / num_columns] * num_columns
 
     table = Table(table_data, colWidths=colWidths)
     table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.aliceblue),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.whitesmoke),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
         ('GRID', (0, 0), (-1, -1), 1, colors.black),
     ]))
 
-    pdf.build([main_heading, sub_heading, Spacer(1, 20), table])
+    pdf.build([main_heading, sub_heading, Spacer(1, 10), table])
 
     pdf_bytes = buffer.getvalue()
     buffer.close()

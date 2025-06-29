@@ -10,6 +10,7 @@ from openpyxl.styles import Font, Alignment
 from fastapi.responses import StreamingResponse, JSONResponse
 import io
 import pandas as pd
+from openpyxl.styles import Border, Side
 
 app = FastAPI()
 
@@ -300,7 +301,26 @@ async def print_table_excel(
 	if stock_data is None or not stock_data:
 			raise HTTPException(status_code=404, detail="No stock data found for the specified parameters.")
 
+	has_gst = any(float(item.get("gst_rate", 0)) > 0 for item in stock_data)
+
+	columns = [
+			("item", "ITEM"),
+			("design_code", "CODE"),
+			("size", "SIZE"),
+			("sp_per_item", "PRICE"),
+			("qty", "QUANTITY"),
+	]
+
+	if has_gst:
+			columns += [
+					("gst_rate", "GST_RATE"),
+					("taxable_amount", "TAXABLE"),
+					("tax_amount", "TAX"),
+			]		
+
 	df = pd.DataFrame(stock_data)
+	df = df[[col[0] for col in columns]]
+	df.columns = [col[1] for col in columns]
 	df.index = range(1, len(df) + 1)
 
 	excel_bytes_io = io.BytesIO()
@@ -312,17 +332,20 @@ async def print_table_excel(
 			workbook = writer.book
 			worksheet = writer.sheets[sheet_name]
 
-			worksheet.merge_cells("A1:H1")
-			header_cell = worksheet["A1"]
-			header_cell.value = f"Brand: {brand_name} | Store: {store_name} | Date: {date} | {action} stocks"
-			header_cell.font = Font(bold=True, size=14, name="Times New Roman")
-			header_cell.alignment = Alignment(horizontal="center", vertical="center")
+			worksheet["C1"] = brand_name.upper()
+			worksheet["D1"] = store_name.upper()
+			worksheet["D2"] = formatted_date.upper()
+			worksheet["E2"] = f"{action.upper()} STOCKS"
 
+			for cell in ["C1", "D1"]:
+				worksheet[cell].font = Font(bold=False)
+				worksheet[cell].alignment = Alignment(horizontal="center", vertical="center")
+	
 			column_widths = {
 					"A": 12,  # S.No
-					"B": 12,  # item
+					"B": 14,  # item
 					"C": 18,  # design_code
-					"D": 12,  # size
+					"D": 14,  # size
 					"E": 14,  # sp_per_item
 					"F": 10,  # qty
 					"G": 11,  # gst_rate
@@ -331,7 +354,21 @@ async def print_table_excel(
 			}
 
 			for col, width in column_widths.items():
-					worksheet.column_dimensions[col].width = width
+				worksheet.column_dimensions[col].width = width
+
+			thin_border = Border(
+				left=Side(style="thin", color="000000"),
+				right=Side(style="thin", color="000000"),
+				top=Side(style="thin", color="000000"),
+				bottom=Side(style="thin", color="000000")
+			)		
+
+			max_column = 9 if has_gst else 6
+
+			for row in worksheet.iter_rows(min_row=1, max_row=worksheet.max_row, min_col=1, max_col=max_column):
+				for cell in row:
+						cell.alignment = Alignment(horizontal="center", vertical="center")
+						cell.border = thin_border
 	
 	excel_bytes_io.seek(0)
 
