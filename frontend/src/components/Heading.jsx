@@ -1,4 +1,5 @@
 import "../styles/Heading.css";
+import Help from "../components/Help.jsx";
 
 function Heading({ name, onClick, onDoubleClick}) {
   return (
@@ -10,6 +11,8 @@ function Heading({ name, onClick, onDoubleClick}) {
       >
         {name}
       </div>
+
+      <Help/>
     </>
   );
 }

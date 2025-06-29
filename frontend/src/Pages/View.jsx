@@ -8,6 +8,7 @@ import { BrandNameContext } from "../contexts/BrandNameContext.jsx";
 import { useNavigate } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import DropDown from "../components/DropDown.jsx";
 import Loading from "../components/Loading.jsx";
 
 function ViewStock() {
@@ -19,6 +20,39 @@ function ViewStock() {
 
   const handleDoubleClick = () => {
     navigate("/home");
+  };
+
+  const [stores, setStores] = useState([]);
+  const [filteredStores, setFilteredStores] = useState([]);
+  const [suggest, setSuggest] = useState(false);
+
+  useEffect(() => {
+    axios
+      .get("http://localhost:8000/stores", {
+        params: {
+          brand_name: brandName,
+        },
+      })
+      .then((res) => {
+        setStores(res.data.stores);
+        setFilteredStores(res.data.stores);
+      })
+      .catch((err) => console.error(err));
+  }, []);
+
+  const handleStoreNameInputChange = (e) => {
+    const value = e.target.value;
+    setStoreName(value);
+
+    const filtered = stores.filter((store) =>
+      store.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredStores(filtered);
+  };
+
+  const handleSelectSuggestion = (selectedName) => {
+    setStoreName(selectedName);
+    setFilteredStores([]);
   };
 
   const location = useLocation();
@@ -126,7 +160,9 @@ function ViewStock() {
       try {
         setLoading(true);
         const response = await axios.get(
-          `http://localhost:8000/shelf/${encodeURIComponent(brandName)}/${encodeURIComponent(storeName)}`
+          `http://localhost:8000/shelf/${encodeURIComponent(
+            brandName
+          )}/${encodeURIComponent(storeName)}`
         );
 
         setRetrievedData(response.data.data);
@@ -149,7 +185,9 @@ function ViewStock() {
       try {
         setLoading(true);
         const response = await axios.get(
-          `http://localhost:8000/view_action/${encodeURIComponent(brandName)}/${encodeURIComponent(storeName)}/${date}/${action}`
+          `http://localhost:8000/view_action/${encodeURIComponent(
+            brandName
+          )}/${encodeURIComponent(storeName)}/${date}/${action}`
         );
 
         setRetrievedData(response.data.data);
@@ -188,13 +226,31 @@ function ViewStock() {
       {loading && <Loading />}
 
       <div className="viewstock">
-        <input
-          type="text"
-          placeholder="Store name"
-          className="details storeView"
-          value={storeName}
-          onChange={(e) => setStoreName(e.target.value)}
-        />
+        <div
+          style={{
+            position: "relative",
+            gridColumn: "span 2",
+            display: "grid",
+          }}
+        >
+          <input
+            type="text"
+            placeholder="Store name"
+            className="details storeView"
+            value={storeName}
+            onChange={handleStoreNameInputChange}
+            onFocus={() => setSuggest(true)}
+          />
+
+          {suggest && storeName.trim() !== "" && (
+            <DropDown
+              options={filteredStores}
+              onSelect={handleSelectSuggestion}
+              className="store-name-suggestions-view"
+            />
+          )}
+        </div>
+        
         <input
           type="text"
           placeholder="new or return or sales"

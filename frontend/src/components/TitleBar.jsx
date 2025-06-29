@@ -1,4 +1,3 @@
-import React from "react";
 import "../styles/TitleBar.css";
 
 import minimizeIcon from "../assets/minimize.svg";

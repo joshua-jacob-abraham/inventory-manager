@@ -1,0 +1,44 @@
+.help{
+  position: absolute;
+  right: 20px;
+  top: 20px;
+}
+
+.helpButton{
+  background-color: #FDFCDC;
+  border: 1px solid black;
+  border: none;
+  cursor: pointer;
+}
+
+.helpButton:hover{
+  background-color: #FDFCDC;
+}
+
+.helpBox {
+  position: absolute;
+  top: 30px;
+  right: 10px;
+  background: white;
+  border: 1px solid #ccc;
+  padding: 1rem;
+  border-radius: 10px;
+  z-index: 999;
+  padding-top: 0px;
+  width: 330px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.helpClose{
+  border-radius: 2px;
+  border: 1px solid black;
+  outline: none;
+}
+
+.helpClose:hover{
+  background-color: white;
+}
+
+.helpClose:focus{
+  outline: none;
+}

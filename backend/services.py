@@ -16,6 +16,21 @@ temp_stock_data = {}
 def make_valid_table_name(name: str):
     return name.strip().replace(" ", "_")
 
+def reverse_table_name(name: str):
+    return name.strip().replace("_", " ")
+
+def add_to_stores(store_name: str, connection):
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT store_name FROM stores WHERE store_name = %s", (store_name,))
+    result = cursor.fetchone()
+
+    if not result:
+        cursor.execute("INSERT INTO stores (store_name) VALUES (%s)", (store_name,))
+        connection.commit()
+
+    cursor.close()        
+
 def add_design_temp(store_key : str, stock_item : StockItem):
     if store_key not in temp_stock_data:
         temp_stock_data[store_key] = []

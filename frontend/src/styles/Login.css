@@ -31,14 +31,13 @@ h1 {
   padding: 12px 15px;
   border: 1px solid #2D605E;
   border-radius: 8px;
-  width: 90%;
   max-width: 350px;
   font-size: 16px;
   font-family: Arial, sans-serif;
   background-color: #FDFCDC; 
   color: #2D605E; 
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 
 .formDat::placeholder {
@@ -61,6 +60,7 @@ h1 {
   border-radius: 8px;
   cursor: pointer;
   max-width: 350px;
+  margin-top: 5px;
   transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
@@ -70,6 +70,10 @@ h1 {
 
 .submitbutton:active {
   background-color: #275654;
+}
+
+.form-group{
+  position: relative;
 }
 
 /* Responsive Styling */

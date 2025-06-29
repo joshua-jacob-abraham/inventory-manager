@@ -3,7 +3,7 @@ from fastapi.responses import FileResponse
 import mysql.connector as ms
 from fastapi.middleware.cors import CORSMiddleware
 from models import StockItem,ReturnedItem
-from services import make_valid_table_name, submit_new_stock,add_design_temp,temp_stock_data,from_shelf,lookup,add_design_temp_return,submit_returned_stock,remove_from_temp,generate_pdf_bytes,lookupforprint,submit_sales_stock
+from services import add_to_stores, make_valid_table_name, reverse_table_name, submit_new_stock,add_design_temp,temp_stock_data,from_shelf,lookup,add_design_temp_return,submit_returned_stock,remove_from_temp,generate_pdf_bytes,lookupforprint,submit_sales_stock
 from database import get_db_connection
 from datetime import datetime
 from openpyxl.styles import Font, Alignment
@@ -30,7 +30,47 @@ async def check_db_health():
 		connection.close()
 		return {"mysql": "ok"}
 	except Exception as e:
-		return JSONResponse(status_code=500, content={"mysql": "down", "error": str(e)})	
+		return JSONResponse(status_code=500, content={"mysql": "down", "error": str(e)})
+	
+#get brandnames and store names
+@app.get("/brands")
+async def get_brands():
+	try:
+		connection = get_db_connection()
+		cursor = connection.cursor()
+		
+		cursor.execute("""
+            SELECT schema_name 
+            FROM information_schema.schemata 
+            WHERE schema_name NOT IN ('mysql', 'information_schema','performance_schema', 'sys');
+        """)
+		brands = [row[0] for row in cursor.fetchall()]
+		for i in range(0,len(brands)):
+			brands[i] = reverse_table_name(brands[i])
+
+		connection.close()
+		return {"brands": brands}
+	except Exception as e:
+		raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/stores")
+async def get_stores(
+	brand_name : str
+):
+	try:
+		connection = get_db_connection(brand_name)
+		cursor = connection.cursor()
+		
+		cursor.execute("SELECT * FROM stores;")
+
+		thestores = [row[0] for row in cursor.fetchall()]
+		for i in range(0,len(thestores)):
+			thestores[i] = reverse_table_name(thestores[i])
+
+		connection.close()
+		return {"stores": thestores}
+	except Exception as e:
+		raise HTTPException(status_code=400, detail=str(e))		
 
 #add new items
 @app.post("/add/new")
@@ -184,6 +224,8 @@ async def submition_handler(
 			store_key = f"{store_name}_{formatted_date}_sales_stock"
 			table_name = f"{store_name}_{formatted_date}_sales_stock"
 			submit_sales_stock(store_name, store_key,table_name,formatted_date,connection)
+
+		add_to_stores(store_name,connection)
 
 		connection.close()
 

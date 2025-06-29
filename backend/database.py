@@ -22,6 +22,15 @@ def get_db_connection(
 						cursor.execute(f"CREATE DATABASE `{database}`")
 						connection.commit()
 
+						connection.database = database
+
+						cursor.execute("""
+							CREATE TABLE IF NOT EXISTS stores (
+								store_name VARCHAR(255)
+							);
+						""")
+						connection.commit()
+
 					except ms.Error as e:
 						connection.close()
 						raise Exception(f"Error creating database: {str(e)}")

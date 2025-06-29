@@ -1,6 +1,6 @@
 import "../styles/New.css";
 import { useNavigate } from "react-router-dom";
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import Heading from "../components/Heading.jsx";
 import Checkbox from "../components/Checkbox.jsx";
 import SelectedItemsTable from "../components/Selected.jsx";
@@ -8,6 +8,7 @@ import axios from "axios";
 import CheckGST from "../components/CheckGST.jsx";
 import { BrandNameContext } from "../contexts/BrandNameContext.jsx";
 import Loading from "../components/Loading.jsx";
+import DropDown from "../components/DropDown.jsx";
 
 let fetchedDesigns = [];
 
@@ -27,6 +28,45 @@ function NewStock() {
   };
 
   const { brandName } = useContext(BrandNameContext);
+
+  const [stores, setStores] = useState([]);
+  const [filteredStores, setFilteredStores] = useState([]);
+  const [suggest, setSuggest] = useState(false);
+
+  useEffect(() => {
+    axios
+      .get("http://localhost:8000/stores", {
+        params: {
+          brand_name: brandName,
+        },
+      })
+      .then((res) => {
+        setStores(res.data.stores);
+        setFilteredStores(res.data.stores);
+      })
+      .catch((err) => console.error(err));
+  }, []);
+
+  const handleStoreNameInputChange = (e) => {
+    const value = e.target.value;
+    setData((prevData) => ({
+      ...prevData,
+      storeName: value,
+    }));
+
+    const filtered = stores.filter((store) =>
+      store.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredStores(filtered);
+  };
+
+  const handleSelectSuggestion = (selectedName) => {
+    setData((prevData) => ({
+      ...prevData,
+      storeName: selectedName,
+    }));
+    setFilteredStores([]);
+  };
 
   const sizes = ["12", "14", "16", "18", "20", "22", "24", "26", "28", "30"];
   const [loading, setLoading] = useState(false);
@@ -306,13 +346,30 @@ function NewStock() {
       {loading && <Loading />}
 
       <div className="newstock">
-        <input
-          type="text"
-          placeholder="Store name"
-          className="details store"
-          value={data.storeName}
-          onChange={(e) => setData({ ...data, storeName: e.target.value })}
-        />
+        <div
+          style={{
+            position: "relative",
+            gridColumn: "span 2",
+            display: "grid",
+          }}
+        >
+          <input
+            type="text"
+            placeholder="Store name"
+            className="details store"
+            value={data.storeName}
+            onChange={handleStoreNameInputChange}
+            onFocus={() => setSuggest(true)}
+          />
+
+          {suggest && data.storeName.trim() !== "" && (
+            <DropDown
+              options={filteredStores}
+              onSelect={handleSelectSuggestion}
+              className="store-name-suggestions"
+            />
+          )}
+        </div>
 
         <input
           type="text"

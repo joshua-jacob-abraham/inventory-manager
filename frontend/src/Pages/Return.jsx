@@ -1,12 +1,13 @@
 import "../styles/Return.css";
 import Heading from "../components/Heading.jsx";
 import CheckboxSize from "../components/CheckboxSize.jsx";
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import SelectedReturn from "../components/SelectedReturn.jsx";
 import { BrandNameContext } from "../contexts/BrandNameContext.jsx";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Loading from "../components/Loading.jsx";
+import DropDown from "../components/DropDown.jsx";
 
 let fetchedReturnedDesigns = [];
 
@@ -23,6 +24,45 @@ function ReturnStock() {
     if (!data.storeName.trim()) {
       navigate("/home");
     }
+  };
+
+  const [stores, setStores] = useState([]);
+  const [filteredStores, setFilteredStores] = useState([]);
+  const [suggest, setSuggest] = useState(false);
+
+  useEffect(() => {
+    axios
+      .get("http://localhost:8000/stores", {
+        params: {
+          brand_name: brandName,
+        },
+      })
+      .then((res) => {
+        setStores(res.data.stores);
+        setFilteredStores(res.data.stores);
+      })
+      .catch((err) => console.error(err));
+  }, []);
+
+  const handleStoreNameInputChange = (e) => {
+    const value = e.target.value;
+    setData((prevData) => ({
+      ...prevData,
+      storeName: value,
+    }));
+
+    const filtered = stores.filter((store) =>
+      store.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredStores(filtered);
+  };
+
+  const handleSelectSuggestion = (selectedName) => {
+    setData((prevData) => ({
+      ...prevData,
+      storeName: selectedName,
+    }));
+    setFilteredStores([]);
   };
 
   const { brandName } = useContext(BrandNameContext);
@@ -198,7 +238,9 @@ function ReturnStock() {
     try {
       setLoading(true);
       const response = await axios.post(
-        `http://localhost:8000/submit/${encodeURIComponent(brandName)}/${action}`,
+        `http://localhost:8000/submit/${encodeURIComponent(
+          brandName
+        )}/${action}`,
         null,
         {
           params: {
@@ -209,7 +251,19 @@ function ReturnStock() {
       );
 
       console.log("Submission Response:", response.data);
-      alert(response.data.message || "Submission successful!");
+      alert(
+        response.data.message + ". You will be redirected to the view page." ||
+          "Submission successful!"
+      );
+
+      navigate("/view", {
+        state: {
+          store_name: data.storeName,
+          date: data.date,
+          action: action,
+          autoFetch: true,
+        },
+      });
     } catch (error) {
       console.error(
         "Error submitting data:",
@@ -265,13 +319,31 @@ function ReturnStock() {
       {loading && <Loading />}
 
       <div className="stock">
-        <input
-          type="text"
-          placeholder="Store name"
-          className="details storeReturn"
-          value={data.storeName}
-          onChange={(e) => setData({ ...data, storeName: e.target.value })}
-        />
+        <div
+          style={{
+            position: "relative",
+            gridColumn: "span 3",
+            display: "grid",
+          }}
+        >
+          <input
+            type="text"
+            placeholder="Store name"
+            className="details storeReturn"
+            value={data.storeName}
+            onChange={handleStoreNameInputChange}
+            onFocus={() => setSuggest(true)}
+          />
+
+          {suggest && data.storeName.trim() !== "" && (
+            <DropDown
+              options={filteredStores}
+              onSelect={handleSelectSuggestion}
+              className="store-name-suggestions-return"
+            />
+          )}
+        </div>
+
         <input
           type="text"
           placeholder="Code Base"

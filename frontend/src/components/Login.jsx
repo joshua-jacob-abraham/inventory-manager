@@ -1,14 +1,43 @@
-import React, { useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useContext, useState, useEffect } from "react";
+import DropDown from "../components/DropDown.jsx";
+import { useNavigate } from "react-router-dom";
 import "../styles/Login.css";
+import axios from "axios";
 import { BrandNameContext } from "../contexts/BrandNameContext.jsx";
 
 const Login = () => {
+  const [brands, setBrands] = useState([]);
+  const [filteredBrands, setFilteredBrands] = useState([]);
+  const [suggest, setSuggest] = useState(false);
+
   const { brandName, setBrandName } = useContext(BrandNameContext);
+
+  useEffect(() => {
+    setBrandName("");
+    axios
+      .get("http://localhost:8000/brands")
+      .then((res) => {
+        setBrands(res.data.brands);
+        setFilteredBrands(res.data.brands);
+      })
+      .catch((err) => console.error(err));
+  }, []);
+
   const navigate = useNavigate();
-  
+
   const handleInputChange = (e) => {
-    setBrandName(e.target.value);
+    const value = e.target.value;
+    setBrandName(value);
+
+    const filtered = brands.filter((brand) =>
+      brand.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredBrands(filtered);
+  };
+
+  const handleSelectSuggestion = (selectedName) => {
+    setBrandName(selectedName);
+    setFilteredBrands([]);
   };
 
   const handleSubmit = (e) => {
@@ -19,8 +48,7 @@ const Login = () => {
       console.log("Updated Brand Name:", trimmedBrandName);
     }
     console.log("Form submitted");
-
-    navigate('/dash');
+    navigate("/dash");
   };
 
   return (
@@ -33,11 +61,19 @@ const Login = () => {
             type="text"
             id="brandName"
             name="brandName"
+            value={brandName}
             className="formDat"
             onChange={handleInputChange}
-            autoComplete='off'
+            onFocus={() => setSuggest(true)}
+            autoComplete="off"
             required
           />
+
+          {suggest && brandName.trim() !== "" && <DropDown
+            options={filteredBrands}
+            onSelect={handleSelectSuggestion}
+            className="brand-name-suggestions"
+          />}
         </div>
 
         <div className="submitSection">
