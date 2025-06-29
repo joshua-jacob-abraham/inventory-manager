@@ -13,8 +13,8 @@ import re
 
 temp_stock_data = {}
 
-def is_valid_name(name: str) -> bool:
-    return re.match("^[A-Za-z0-9_]+$", name) is not None
+def make_valid_table_name(name: str):
+    return name.strip().replace(" ", "_")
 
 def add_design_temp(store_key : str, stock_item : StockItem):
     if store_key not in temp_stock_data:
@@ -23,6 +23,9 @@ def add_design_temp(store_key : str, stock_item : StockItem):
     return temp_stock_data[store_key]
 
 def submit_new_stock(store_name : str, store_key: str, table_name: str, connection):
+    store_name = make_valid_table_name(store_name)
+    table_name = make_valid_table_name(table_name)
+
     if store_key not in temp_stock_data or not temp_stock_data[store_key]:
         raise ValueError("No designs to submit.")
 
@@ -47,6 +50,8 @@ def submit_new_stock(store_name : str, store_key: str, table_name: str, connecti
 #store name as table name
 #status 1 for new stock, 0 for returned.
 def update_store(store_name : str, store_key : str, status : bool, connection):
+    store_name = make_valid_table_name(store_name)
+
     cursor = connection.cursor()
     create_table(cursor,store_name)
     connection.commit()
@@ -72,6 +77,7 @@ def update_store(store_name : str, store_key : str, status : bool, connection):
 
 #view shelf
 def from_shelf(store_name : str,connection):
+    store_name = make_valid_table_name(store_name)
     cursor = connection.cursor(dictionary = True)
     
     try:
@@ -87,6 +93,7 @@ def from_shelf(store_name : str,connection):
 
 #view action on a date
 def lookup(store_name : str, date : str, action : str, connection):
+    store_name = make_valid_table_name(store_name)
     cursor = connection.cursor(dictionary = True)
     
     date_obj = datetime.strptime(date,"%Y-%m-%d")
@@ -129,6 +136,9 @@ def add_design_temp_return(store_key : str, returned_item : ReturnedItem):
     return temp_stock_data[store_key]
 
 def submit_returned_stock(store_name : str, store_key: str, table_name: str, date : str, connection):
+    store_name = make_valid_table_name(store_name)
+    table_name = make_valid_table_name(table_name)
+
     if store_key not in temp_stock_data or not temp_stock_data[store_key]:
         raise ValueError("No designs to submit.")
 
@@ -153,6 +163,9 @@ def submit_returned_stock(store_name : str, store_key: str, table_name: str, dat
 
 #submit sales
 def submit_sales_stock(store_name : str, store_key: str, table_name: str, date : str, connection):
+    store_name = make_valid_table_name(store_name)
+    table_name = make_valid_table_name(table_name)
+
     if store_key not in temp_stock_data or not temp_stock_data[store_key]:
         raise ValueError("No designs to submit.")
 
@@ -198,6 +211,8 @@ def remove_from_temp(store_key : str, code : str):
 
 #lookupforprint
 def lookupforprint(store_name : str, date : str, action : str, connection):
+    store_name = make_valid_table_name(store_name)
+
     cursor = connection.cursor(dictionary = True)
     
     date_obj = datetime.strptime(date,"%Y-%m-%d")
@@ -237,6 +252,9 @@ import io
 from reportlab.lib.pagesizes import letter, landscape
 
 def generate_pdf_bytes(brand_name: str ,store_name: str, date: str, action: str, stock_data: list) -> bytes:
+    brand_name = make_valid_table_name(brand_name)
+    store_name = make_valid_table_name(store_name)
+    
     date_obj = datetime.strptime(date, "%Y-%m-%d")
     formatted_date = date_obj.strftime("%d_%b_%Y")
 

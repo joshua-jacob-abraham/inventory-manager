@@ -198,7 +198,7 @@ function ReturnStock() {
     try {
       setLoading(true);
       const response = await axios.post(
-        `http://localhost:8000/submit/${brandName}/${action}`,
+        `http://localhost:8000/submit/${encodeURIComponent(brandName)}/${action}`,
         null,
         {
           params: {

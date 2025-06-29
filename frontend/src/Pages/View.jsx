@@ -6,6 +6,8 @@ import ViewedItemsTable from "../components/Viewed.jsx";
 import Check from "../components/Check.jsx";
 import { BrandNameContext } from "../contexts/BrandNameContext.jsx";
 import { useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import Loading from "../components/Loading.jsx";
 
 function ViewStock() {
@@ -19,19 +21,23 @@ function ViewStock() {
     navigate("/home");
   };
 
+  const location = useLocation();
+  const passedState = location.state || {};
+
+  const [storeName, setStoreName] = useState(passedState.store_name || "");
+  const [action, setAction] = useState(passedState.action || "");
+  const [date, setDate] = useState(passedState.date || "");
+
   const { brandName } = useContext(BrandNameContext);
   const [isDisabled, setIsDisabled] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const [storeName, setStoreName] = useState("");
-  const [action, setAction] = useState("");
-  const [date, setDate] = useState("");
-  const [sampleData, setSampleData] = useState([]);
+  const [retrievedData, setRetrievedData] = useState([]);
 
   const handleCheckChange = (checked) => {
     setIsDisabled(checked);
     if (!checked) {
-      setSampleData([]);
+      setRetrievedData([]);
     }
   };
 
@@ -39,7 +45,7 @@ function ViewStock() {
     try {
       setLoading(true);
       const response = await axios.post(
-        `http://localhost:8000/printPDF/${brandName}`,
+        `http://localhost:8000/printPDF/${encodeURIComponent(brandName)}`,
         null,
         {
           params: {
@@ -120,10 +126,10 @@ function ViewStock() {
       try {
         setLoading(true);
         const response = await axios.get(
-          `http://localhost:8000/shelf/${brandName}/${storeName}`
+          `http://localhost:8000/shelf/${encodeURIComponent(brandName)}/${encodeURIComponent(storeName)}`
         );
 
-        setSampleData(response.data.data);
+        setRetrievedData(response.data.data);
         console.log(response);
         if (response.data.data.length == 0) {
           setLoading(false);
@@ -143,10 +149,10 @@ function ViewStock() {
       try {
         setLoading(true);
         const response = await axios.get(
-          `http://localhost:8000/view_action/${brandName}/${storeName}/${date}/${action}`
+          `http://localhost:8000/view_action/${encodeURIComponent(brandName)}/${encodeURIComponent(storeName)}/${date}/${action}`
         );
 
-        setSampleData(response.data.data);
+        setRetrievedData(response.data.data);
         console.log(response);
         if (response.data.data.length == 0) {
           setLoading(false);
@@ -164,6 +170,12 @@ function ViewStock() {
       }
     }
   };
+
+  useEffect(() => {
+    if (passedState.autoFetch) {
+      handleGet();
+    }
+  }, []);
 
   return (
     <div className="dashboard">
@@ -220,7 +232,7 @@ function ViewStock() {
         </button>
 
         <div className="viewedItems">
-          <ViewedItemsTable data={sampleData} isDisabled={isDisabled} />
+          <ViewedItemsTable data={retrievedData} isDisabled={isDisabled} />
         </div>
       </div>
     </div>

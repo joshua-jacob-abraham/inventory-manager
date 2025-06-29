@@ -3,7 +3,7 @@ from fastapi.responses import FileResponse
 import mysql.connector as ms
 from fastapi.middleware.cors import CORSMiddleware
 from models import StockItem,ReturnedItem
-from services import submit_new_stock,add_design_temp,temp_stock_data,from_shelf,lookup,add_design_temp_return,submit_returned_stock,remove_from_temp,generate_pdf_bytes,lookupforprint,submit_sales_stock
+from services import make_valid_table_name, submit_new_stock,add_design_temp,temp_stock_data,from_shelf,lookup,add_design_temp_return,submit_returned_stock,remove_from_temp,generate_pdf_bytes,lookupforprint,submit_sales_stock
 from database import get_db_connection
 from datetime import datetime
 from openpyxl.styles import Font, Alignment
@@ -42,7 +42,8 @@ async def add_stock_item(
 	
 	date_obj = datetime.strptime(date, "%Y-%m-%d")
 	formatted_date = date_obj.strftime("%d_%b_%Y")
-	
+
+	store_name = make_valid_table_name(store_name)
 	store_key = f"{store_name}_{formatted_date}_new_stock"
 
 	try:
@@ -66,6 +67,7 @@ async def add_returned_item(
 	date_obj = datetime.strptime(date, "%Y-%m-%d")
 	formatted_date = date_obj.strftime("%d_%b_%Y")
 	
+	store_name = make_valid_table_name(store_name)
 	store_key = f"{store_name}_{formatted_date}_return_stock"
 
 	try:
@@ -90,6 +92,7 @@ async def add_sales_item(
 	date_obj = datetime.strptime(date, "%Y-%m-%d")
 	formatted_date = date_obj.strftime("%d_%b_%Y")
 	
+	store_name = make_valid_table_name(store_name)
 	store_key = f"{store_name}_{formatted_date}_sales_stock"
 
 	try:
@@ -114,6 +117,9 @@ async def view_stock(store_key: str):
 #view shelf
 @app.get("/shelf/{brand_name}/{store_name}")
 async def view_shelf(brand_name : str, store_name : str):
+	store_name = make_valid_table_name(store_name)
+	brand_name = make_valid_table_name(brand_name)
+
 	try:
 		connection = get_db_connection(brand_name)
 		shelf = from_shelf(store_name, connection)
@@ -130,13 +136,16 @@ async def view_shelf(brand_name : str, store_name : str):
 #view action on a date
 @app.get("/view_action/{brand_name}/{store_name}/{date}/{action}")
 async def view_action(brand_name : str,store_name : str, date: str, action : str):
+	store_name = make_valid_table_name(store_name)
+	brand_name = make_valid_table_name(brand_name)
+
 	try:
 		connection = get_db_connection(brand_name)
 		action_on_date = lookup(store_name,date,action,connection)
 		connection.close()
 
 		if not action_on_date:
-			return {"message": f"Action not performed on {date} in {store_name}.", "data" : []}
+			return {"message": f"Action not performed at {store_name} on {date}. ", "data" : []}
 
 		return {"message": f"{action} stock on {date} at {store_name}.", "data": action_on_date}
 	
@@ -151,6 +160,9 @@ async def submition_handler(
 	store_name : str = Query(...), 
 	date : str = Query(...)
 	):
+
+	brand_name = make_valid_table_name(brand_name)
+	store_name = make_valid_table_name(store_name)
 
 	date_obj = datetime.strptime(date, "%Y-%m-%d")
 	formatted_date = date_obj.strftime("%d_%b_%Y")
@@ -205,11 +217,13 @@ async def print_pdf(
 	action : str = Query(...)
 	):
 	
+	store_name = make_valid_table_name(store_name)
+	brand_name = make_valid_table_name(brand_name)
+
 	date_obj = datetime.strptime(date,"%Y-%m-%d")
 	formatted_date = date_obj.strftime("%d_%b_%Y")
 
 	connection = get_db_connection(brand_name)
-	
 
 	stock_data = lookupforprint(store_name,date,action,connection)
 	if stock_data is None or not stock_data:
@@ -233,6 +247,9 @@ async def print_table_excel(
 ):
 	date_obj = datetime.strptime(date, "%Y-%m-%d")
 	formatted_date = date_obj.strftime("%d_%b_%Y")
+
+	brand_name = make_valid_table_name(brand_name)
+	store_name = make_valid_table_name(store_name)
 
 	connection = get_db_connection(brand_name)
 

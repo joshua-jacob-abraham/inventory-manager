@@ -233,7 +233,9 @@ function NewStock() {
     try {
       setLoading(true);
       const response = await axios.post(
-        `http://localhost:8000/submit/${brandName}/${action}`,
+        `http://localhost:8000/submit/${encodeURIComponent(
+          brandName
+        )}/${action}`,
         null,
         {
           params: {
@@ -244,7 +246,19 @@ function NewStock() {
       );
 
       console.log("Submission Response:", response.data);
-      alert(response.data.message || "Submission successful!");
+      alert(
+        response.data.message + ". You will be redirected to the view page." ||
+          "Submission successful!"
+      );
+
+      navigate("/view", {
+        state: {
+          store_name: data.storeName,
+          date: data.date,
+          action: action,
+          autoFetch: true,
+        },
+      });
     } catch (error) {
       console.error(
         "Error submitting data:",
