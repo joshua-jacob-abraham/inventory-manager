@@ -3,7 +3,7 @@ from fastapi.responses import FileResponse
 import mysql.connector as ms
 from fastapi.middleware.cors import CORSMiddleware
 from models import StockItem,ReturnedItem
-from services import add_to_stores, make_valid_table_name, reverse_table_name, submit_new_stock,add_design_temp,temp_stock_data,from_shelf,lookup,add_design_temp_return,submit_returned_stock,remove_from_temp,generate_pdf_bytes,lookupforprint,submit_sales_stock
+from services import add_to_stores, is_valid_name, make_valid_table_name, reverse_table_name, submit_new_stock,add_design_temp,temp_stock_data,from_shelf,lookup,add_design_temp_return,submit_returned_stock,remove_from_temp,generate_pdf_bytes,lookupforprint,submit_sales_stock
 from database import get_db_connection
 from datetime import datetime
 from openpyxl.styles import Font, Alignment
@@ -33,6 +33,51 @@ async def check_db_health():
 	except Exception as e:
 		return JSONResponse(status_code=500, content={"mysql": "down", "error": str(e)})
 	
+#rename brandname
+@app.post("/alter/brandname")
+async def alterName(
+	old_name : str = Query(...),
+	new_name : str = Query(...)
+):
+	old_name = make_valid_table_name(old_name)
+	new_name = make_valid_table_name(new_name)
+
+	if not is_valid_name(old_name) or not is_valid_name(new_name):
+		raise HTTPException(status_code=400, detail="Brand name should have only letters, numbers and spaces.")
+
+	try:
+		connection = get_db_connection()
+		cursor = connection.cursor()
+
+		cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{new_name}`;")
+		cursor.execute(f"""
+					SELECT table_name 
+					FROM information_schema.tables 
+					WHERE table_schema = '{old_name}';
+			""")
+		tables = cursor.fetchall()
+		for each in tables:
+			print(each)
+
+		for (table_name,) in tables:
+				cursor.execute(f"""
+						RENAME TABLE `{old_name}`.`{table_name}` TO `{new_name}`.`{table_name}`;
+				""")
+
+		cursor.execute(f"DROP DATABASE `{old_name}`;")
+
+		connection.commit()
+		cursor.close()
+
+		connection.close()
+
+		return {
+			"message" : f"Database renamed from `{reverse_table_name(old_name)}` to `{reverse_table_name(new_name)}` successfully",
+			"new_name" : reverse_table_name(new_name)
+		}		
+	except Exception as e:
+		raise HTTPException(status_code=400, detail=str(e))	
+
 #get brandnames and store names
 @app.get("/brands")
 async def get_brands():

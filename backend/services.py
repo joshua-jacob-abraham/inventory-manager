@@ -13,6 +13,9 @@ import re
 
 temp_stock_data = {}
 
+def is_valid_name(name: str) -> bool:
+    return bool(re.match(r'^[a-zA-Z0-9_]+$', name))
+
 def make_valid_table_name(name: str):
     return name.strip().replace(" ", "_")
 

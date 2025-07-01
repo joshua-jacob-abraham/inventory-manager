@@ -29,16 +29,43 @@
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
-.helpClose{
+.helpClose, .renameButton{
   border-radius: 2px;
   border: 1px solid black;
   outline: none;
+  margin-right: 5px;
 }
 
-.helpClose:hover{
+.helpClose:hover, .renameButton:hover{
   background-color: white;
 }
 
 .helpClose:focus{
   outline: none;
+}
+
+.renameBox{
+  border: 1px solid rgb(121, 121, 121);
+  border-radius: 2px;
+  margin-bottom: 5px;
+  display: flex;
+  padding: 12px 5px;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.names{
+  box-sizing: border-box;
+  outline: none;
+  width: 48%;
+  display: inline;
+  padding: 3px 4px;
+  border: 1px solid black;
+  border-radius: 2px;
+  font-size: 12px;
+  font-family: Arial, sans-serif;
+}
+
+.names::placeholder{
+  color: rgb(77, 77, 77);
 }
