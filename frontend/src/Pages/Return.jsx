@@ -8,6 +8,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Loading from "../components/Loading.jsx";
 import DropDown from "../components/DropDown.jsx";
+import flowerImg from "../assets/flower.avif";
 
 let fetchedReturnedDesigns = [];
 
@@ -361,7 +362,7 @@ function ReturnStock() {
         <div
           style={{
             position: "relative",
-            gridColumn: "span 3",
+            gridColumn: "span 1",
             display: "grid",
           }}
         >
@@ -409,6 +410,15 @@ function ReturnStock() {
           ))}
         </div>
 
+        <div className="flowerBox">
+          <img
+            src={flowerImg}
+            alt="Flower"
+            className="flower"
+            draggable={false}
+          />
+        </div>
+
         <div className="theactionReturn">
           <button className="actionRet actReturn" onClick={handleAddItem}>
             Add
@@ -432,6 +442,8 @@ function ReturnStock() {
             onRemove={handleRemoveReturnItem}
           />
         </div>
+
+        <div className="grayDiv"></div>
       </div>
     </div>
   );
