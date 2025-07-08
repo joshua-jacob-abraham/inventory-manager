@@ -298,6 +298,7 @@ function NewStock() {
       return;
     }
 
+    let submissionSuccessful = false;
     const action = "new";
 
     try {
@@ -321,6 +322,8 @@ function NewStock() {
           "Submission successful!"
       );
 
+      submissionSuccessful = true;
+
       navigate("/view", {
         state: {
           store_name: data.storeName,
@@ -339,30 +342,32 @@ function NewStock() {
       setLoading(false);
     }
 
-    setData({
-      storeName: "",
-      designCode: "",
-      item: "",
-      date: "",
-      stockItems: [],
-      storeKey: "",
-      current_designs: [],
-      gstApplicable: false,
-    });
-
-    fetchedDesigns = [];
-
-    document
-      .querySelectorAll('.box .checkbox-wrapper-52 input[type="checkbox"]')
-      .forEach((checkbox) => {
-        checkbox.checked = false;
+    if (submissionSuccessful) {
+      setData({
+        storeName: "",
+        designCode: "",
+        item: "",
+        date: "",
+        stockItems: [],
+        storeKey: "",
+        current_designs: [],
+        gstApplicable: false,
       });
 
-    setReset(true);
+      fetchedDesigns = [];
 
-    setTimeout(() => {
-      setReset(false);
-    }, 0);
+      document
+        .querySelectorAll('.box .checkbox-wrapper-52 input[type="checkbox"]')
+        .forEach((checkbox) => {
+          checkbox.checked = false;
+        });
+
+      setReset(true);
+
+      setTimeout(() => {
+        setReset(false);
+      }, 0);
+    }
   };
 
   return (
