@@ -72,7 +72,7 @@ async def alterName(
 		connection.close()
 
 		return {
-			"message" : f"Database renamed from `{reverse_table_name(old_name)}` to `{reverse_table_name(new_name)}` successfully",
+			"message" : f"BrandName changed from `{reverse_table_name(old_name)}` to `{reverse_table_name(new_name)}` successfully",
 			"new_name" : reverse_table_name(new_name)
 		}		
 	except Exception as e:

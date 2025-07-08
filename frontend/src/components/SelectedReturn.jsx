@@ -1,23 +1,36 @@
 import React from 'react';
 import "../styles/Selected.css";
 
-const SelectedItemsTable = ({ data }) => {
+const SelectedReturn = ({ data, onRemove }) => {
   return (
     <div className="selected-table-container">
       <table className="selected-table">
         <thead>
           <tr>
+            <th>S.No</th>
             <th>Code</th>
             <th>Size</th>
             <th>Qty</th>
+            {onRemove && <th>Action</th>}
           </tr>
         </thead>
         <tbody>
-          {data.map((item) => (
-            <tr key={item.design_code}>
+          {data.map((item, index) => (
+            <tr key={`${item.design_code}-${item.size}`}>
+              <td>{index + 1}</td>
               <td>{item.design_code}</td>
               <td>{item.size}</td>
               <td>{item.quantity}</td>
+              {onRemove && (
+                <td>
+                  <button
+                    className="remove-btn"
+                    onClick={() => onRemove(item.design_code)}
+                  >
+                    🗑
+                  </button>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -26,4 +39,4 @@ const SelectedItemsTable = ({ data }) => {
   );
 };
 
-export default SelectedItemsTable;
+export default SelectedReturn;

@@ -53,8 +53,8 @@
   font-family: Arial, Helvetica, sans-serif;
 }
 
-.selected-table .remove-btn {
-  background-color: #FF6347; /* Red color for remove button */
+/* .selected-table .remove-btn {
+  background-color: #FF6347; 
   color: white;
   border: none;
   border-radius: 4px;
@@ -63,13 +63,14 @@
   font-size: 12px;
   text-transform: uppercase;
   transition: background-color 0.3s ease;
-}
+} */
 
+/* 
 .selected-table .remove-btn:hover {
   background-color: #e55347;
-}
+} */
 
-.selected-table .remove-btn:focus {
+/* .selected-table .remove-btn:focus {
   outline: none;
 }
 
@@ -86,8 +87,20 @@
 .selected-table td .remove-btn:disabled {
   background-color: #ccc;
   cursor: not-allowed;
-}
+} */
 
 .selected-table td:first-child {
   font-weight: bold;
+}
+
+.remove-btn {
+  background: none;
+  border: none;
+  color: red;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.remove-btn:hover{
+  background: none;
 }

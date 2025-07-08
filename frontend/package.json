@@ -4,13 +4,13 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
-  "description": "Inventory Management System",  
+  "description": "Inventory Management System",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "electron:dev": "concurrently \"vite\" \"electron .\"",
-    "electron:build": "vite build && electron-builder",  
+    "electron:build": "vite build && electron-builder",
     "electron:preview": "electron ."
   },
   "dependencies": {
@@ -36,7 +36,7 @@
     "vite": "^6.0.1"
   },
   "homepage": ".",
-  "main": "./electron/main.js",  
+  "main": "./electron/main.js",
   "build": {
     "appId": "com.inventory-manager",
     "productName": "inventory",
@@ -44,8 +44,8 @@
       "output": "dist_electron"
     },
     "files": [
-      "dist/**/*",        
-      "electron/**/*",    
+      "dist/**/*",
+      "electron/**/*",
       "package.json"
     ],
     "extraResources": [
@@ -56,7 +56,9 @@
       {
         "from": "./electron/mysql",
         "to": "mysql",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "win": {

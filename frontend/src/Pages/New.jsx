@@ -139,7 +139,35 @@ function NewStock() {
     }));
   };
 
+  const handleRemoveDesign = async (designCode) => {
+    try {
+      const res = await axios.post(
+        `http://localhost:8000/remove/temp/${encodeURIComponent(designCode)}`,
+        null,
+        {
+          params: {
+            store_key: data.storeKey,
+          },
+        }
+      );
+      fetchedDesigns = res.data.data;
+      setReset(true);
+      setTimeout(() => setReset(false), 0);
+    } catch (err) {
+      alert("Failed to remove the design.");
+      console.error(err);
+    }
+  };
+
+  const [confirmed, setConfirmed] = useState(false);
+
   const handleAddStockItem = async () => {
+    if (!confirmed) {
+      alert("Confirm design code, store-name, sizes and date before adding.");
+      setConfirmed(true);
+      return;
+    }
+
     if (
       !data.storeName.trim() ||
       !data.designCode.trim() ||
@@ -260,6 +288,8 @@ function NewStock() {
     setTimeout(() => {
       setReset(false);
     }, 0);
+
+    setConfirmed(false);
   };
 
   const handleSubmit = async () => {
@@ -422,7 +452,10 @@ function NewStock() {
         </div>
 
         <div className="selectedItems">
-          <SelectedItemsTable data={fetchedDesigns} />
+          <SelectedItemsTable
+            data={fetchedDesigns}
+            onRemove={handleRemoveDesign}
+          />
         </div>
       </div>
     </div>

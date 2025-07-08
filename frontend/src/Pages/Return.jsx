@@ -116,7 +116,44 @@ function ReturnStock() {
     });
   };
 
+  const handleRemoveReturnItem = async (code) => {
+    if (!data.storeKey) return;
+
+    try {
+      setLoading(true);
+      const response = await axios.post(
+        `http://localhost:8000/remove/temp/${code}`,
+        null,
+        {
+          params: { store_key: data.storeKey },
+        }
+      );
+      fetchedReturnedDesigns = response.data.data;
+
+      setData((prev) => ({
+        ...prev,
+        current_designs: response.data.data,
+      }));
+    } catch (error) {
+      console.error(
+        "Error removing return item:",
+        error.response?.data || error.message
+      );
+      alert("Failed to remove item.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const [confirmed, setConfirmed] = useState(false);
+
   const handleAddItem = async () => {
+    if (!confirmed) {
+      alert("Confirm design code, store-name, sizes and date before adding.");
+      setConfirmed(true);
+      return;
+    }
+
     console.log(data.returnItems);
     console.log(data.storeName);
     console.log(data.designCode);
@@ -225,6 +262,8 @@ function ReturnStock() {
     setTimeout(() => {
       setReset(false);
     }, 0);
+
+    setConfirmed(false);
   };
 
   const handleSubmit = async () => {
@@ -388,7 +427,10 @@ function ReturnStock() {
         </div>
 
         <div className="selectedItemsReturn">
-          <SelectedReturn data={fetchedReturnedDesigns} />
+          <SelectedReturn
+            data={fetchedReturnedDesigns}
+            onRemove={handleRemoveReturnItem}
+          />
         </div>
       </div>
     </div>

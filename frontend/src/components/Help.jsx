@@ -1,11 +1,28 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import menuIcon from "../assets/menu.svg";
 import axios from "axios";
 import { BrandNameContext } from "../contexts/BrandNameContext.jsx";
+import CircularLoader from "../components/CircularLoader.jsx";
 
 import "../styles/Help.css";
 
 const Help = () => {
+  const location = useLocation();
+  const [atHome, setAtHome] = useState(false);
+  const [atDash, setAtDash] = useState(false);
+  const [atNewOrReturn, setAtNewOrReturn] = useState(false);
+
+  useEffect(() => {
+    setAtHome(location.pathname === "/home");
+    setAtDash(location.pathname === "/dash");
+    setAtNewOrReturn(
+      location.pathname === "/add-new" || location.pathname === "add-returned"
+    );
+  }, [location.pathname]);
+
+  const [loading, setLoading] = useState(false);
+
   const [showHelp, setShowHelp] = useState(false);
   const [renameBrand, setRenameBrand] = useState(false);
   const [renameStore, setRenameStore] = useState(false);
@@ -27,6 +44,7 @@ const Help = () => {
       }
 
       try {
+        setLoading(true);
         const res = await axios.post(
           "http://localhost:8000/alter/brandname",
           null,
@@ -42,14 +60,20 @@ const Help = () => {
           setBrandName(newBrand.trim());
         }
 
-        alert(res.data.message);
+        setLoading(false);
+
+        setTimeout(() => {
+          alert(res.data.message);
+        }, 0);
 
         setRenameMode(false);
         setRenameBrand(false);
+
         setOldBrand("");
         setNewBrand("");
       } catch (err) {
         alert(err.response?.data?.detail || "Something went wrong.");
+        setLoading(false);
       }
     }
   };
@@ -60,20 +84,39 @@ const Help = () => {
         className="helpButton"
         onClick={() => setShowHelp((prev) => !prev)}
       >
-        <img src={menuIcon} alt="Help" />
+        {loading ? (
+          <CircularLoader size={20} color="#580303" thickness={2} />
+        ) : (
+          <img src={menuIcon} alt="Help" />
+        )}
       </button>
 
       {showHelp && (
         <div className="helpBox">
-          <p>
-            In the return/sales page, click return or sales to switch modes.
-            Showing 'Return' implies it's in return mode and 'Sales' implies
-            it's in sales mode.
-          </p>
+          {atNewOrReturn && (
+            <p>
+              In the return/sales page, click return or sales to switch modes.
+              Showing 'Return' implies it's in return mode and 'Sales' implies
+              it's in sales mode.
+            </p>
+          )}
           <p>
             Click the brand name once to open the Dashboard, and double-click it
             to return to the Login page, but only if all fields are empty.
           </p>
+
+          {atNewOrReturn && (
+            <p>
+              To correct any mistakes, simply reuse the same code with the right
+              details. You can also submit now and add more stocks later if
+              needed.
+            </p>
+          )}
+
+          {!atNewOrReturn && <p>
+            Brand name can only be changed from the home page, while store name
+            changes must be made from the dashboard.
+          </p>}
 
           {renameBrand && (
             <div className="brandRename renameBox">
@@ -101,7 +144,7 @@ const Help = () => {
             </div>
           )}
 
-          {!renameMode && (
+          {!renameMode && atHome && (
             <button
               className="renameButton"
               onClick={() => {
@@ -112,7 +155,7 @@ const Help = () => {
               Change brandname
             </button>
           )}
-          {!renameMode && (
+          {!renameMode && atDash && (
             <button
               className="renameButton"
               onClick={() => {
