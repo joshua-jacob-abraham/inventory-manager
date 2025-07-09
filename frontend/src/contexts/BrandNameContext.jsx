@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect } from 'react';
 
 // Create the context
 export const BrandNameContext = createContext();
@@ -6,20 +6,17 @@ export const BrandNameContext = createContext();
 // Create a provider component
 export const BrandNameProvider = ({ children }) => {
   const [brandName, setBrandName] = useState(() => {
-    return localStorage.getItem("brandName") || "inventerogenesis";
+    return localStorage.getItem('brandName') || 'inventerogenesis';
   });
-  const [needsRefresh, setNeedsRefresh] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem("brandName", brandName);
+    localStorage.setItem('brandName', brandName);
   }, [brandName]);
 
-  console.log("BrandNameProvider Value:", brandName);
-
+  console.log('BrandNameProvider Value:', brandName);
+  
   return (
-    <BrandNameContext.Provider
-      value={{ brandName, setBrandName, needsRefresh, setNeedsRefresh }}
-    >
+    <BrandNameContext.Provider value={{ brandName, setBrandName }}>
       {children}
     </BrandNameContext.Provider>
   );

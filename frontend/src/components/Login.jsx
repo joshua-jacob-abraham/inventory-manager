@@ -11,8 +11,7 @@ const Login = () => {
   const [filteredBrands, setFilteredBrands] = useState([]);
   const [suggest, setSuggest] = useState(false);
 
-  const { brandName, setBrandName, needsRefresh, setNeedsRefresh } =
-    useContext(BrandNameContext);
+  const { brandName, setBrandName } = useContext(BrandNameContext);
 
   useEffect(() => {
     setBrandName("");
@@ -71,10 +70,7 @@ const Login = () => {
             onChange={handleInputChange}
             onFocus={() => {
               setSuggest(true);
-              if (brands.length === 0 || needsRefresh) {
-                fetchBrands();
-                setNeedsRefresh(false);
-              }
+              fetchBrands();
             }}
             autoComplete="off"
             required
