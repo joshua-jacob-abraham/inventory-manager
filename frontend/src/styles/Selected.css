@@ -73,8 +73,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: blue;
-  text-decoration: underline;
+  color: rgb(211, 50, 22);
 }
 
 .viewRecord:focus{
@@ -83,4 +82,5 @@
 
 .viewRecord:hover{
   background: none;
+  text-decoration: underline;
 }

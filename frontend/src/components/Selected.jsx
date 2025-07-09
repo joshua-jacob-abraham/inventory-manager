@@ -11,9 +11,9 @@ const SelectedItemsTable = ({ data, onRemove }) => {
             <th>Code</th>
             <th>Size</th>
             <th>Price</th>
-            <th>Qnty</th>
-            <th>Taxable Amount</th>
-            <th>Tax Amount</th>
+            <th>Qty</th>
+            <th>Taxable</th>
+            <th>Tax</th>
             {onRemove && <th>Action</th>}
           </tr>
         </thead>
