@@ -227,7 +227,7 @@ function ViewStock() {
       />
 
       {loading && (
-        <Suspense fallback={<CircularLoader />}>
+        <Suspense fallback={null}>
           <Loading />
         </Suspense>
       )}
@@ -250,7 +250,7 @@ function ViewStock() {
           />
 
           {suggest && storeName.trim() !== "" && (
-            <Suspense fallback={<CircularLoader />}>
+            <Suspense fallback={null}>
               <DropDown
                 options={filteredStores}
                 onSelect={handleSelectSuggestion}
@@ -297,7 +297,7 @@ function ViewStock() {
         </button>
 
         <div className="viewedItems">
-          <Suspense fallback={<CircularLoader />}>
+          <Suspense fallback={null}>
             <ViewedItemsTable data={retrievedData} isDisabled={isDisabled} />
           </Suspense>
         </div>

@@ -21,7 +21,7 @@ function App() {
       <TitleBar />
 
       <Router>
-        <Suspense fallback={<CircularLoader />}>
+        <Suspense fallback={null}>
           <Routes>
             <Route path="/" element={<Navigate to="/home" replace />} />
             <Route path="/home" element={<Home />} />

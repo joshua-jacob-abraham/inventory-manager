@@ -440,7 +440,7 @@ function ReturnStock() {
         </div>
 
         <div className="selectedItemsReturn">
-          <Suspense fallback={<CircularLoader />}>
+          <Suspense fallback={null}>
             <SelectedReturn
               data={fetchedReturnedDesigns}
               onRemove={handleRemoveReturnItem}

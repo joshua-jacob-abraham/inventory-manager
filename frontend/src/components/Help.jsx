@@ -31,7 +31,7 @@ const Help = () => {
   const [oldBrand, setOldBrand] = useState("");
   const [newBrand, setNewBrand] = useState("");
 
-  const { brandname, setBrandName } = useContext(BrandNameContext);
+  const { brandname, setBrandName, setNeedsRefresh } = useContext(BrandNameContext);
 
   const [oldStore, setOldStore] = useState("");
   const [newStore, setNewStore] = useState("");
@@ -59,7 +59,8 @@ const Help = () => {
         if (oldBrand == brandname) {
           setBrandName(newBrand.trim());
         }
-
+        
+        setNeedsRefresh(true);
         setLoading(false);
 
         setTimeout(() => {
@@ -113,10 +114,12 @@ const Help = () => {
             </p>
           )}
 
-          {!atNewOrReturn && <p>
-            Brand name can only be changed from the home page, while store name
-            changes must be made from the dashboard.
-          </p>}
+          {!atNewOrReturn && (
+            <p>
+              Brand name can only be changed from the home page, while store
+              name changes must be made from the dashboard.
+            </p>
+          )}
 
           {renameBrand && (
             <div className="brandRename renameBox">

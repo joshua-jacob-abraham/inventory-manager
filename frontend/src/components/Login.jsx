@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import "../styles/Login.css";
 import axios from "axios";
 import { BrandNameContext } from "../contexts/BrandNameContext.jsx";
-import CircularLoader from "../components/CircularLoader.jsx";
 
 const DropDown = lazy(() => import("../components/DropDown.jsx"));
 
@@ -12,18 +11,22 @@ const Login = () => {
   const [filteredBrands, setFilteredBrands] = useState([]);
   const [suggest, setSuggest] = useState(false);
 
-  const { brandName, setBrandName } = useContext(BrandNameContext);
+  const { brandName, setBrandName, needsRefresh, setNeedsRefresh } =
+    useContext(BrandNameContext);
 
   useEffect(() => {
     setBrandName("");
-    axios
-      .get("http://localhost:8000/brands")
-      .then((res) => {
-        setBrands(res.data.brands);
-        setFilteredBrands(res.data.brands);
-      })
-      .catch((err) => console.error(err));
   }, []);
+
+  const fetchBrands = async () => {
+    try {
+      const res = await axios.get("http://localhost:8000/brands");
+      setBrands(res.data.brands);
+      setFilteredBrands(res.data.brands);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const navigate = useNavigate();
 
@@ -66,13 +69,19 @@ const Login = () => {
             value={brandName}
             className="formDat"
             onChange={handleInputChange}
-            onFocus={() => setSuggest(true)}
+            onFocus={() => {
+              setSuggest(true);
+              if (brands.length === 0 || needsRefresh) {
+                fetchBrands();
+                setNeedsRefresh(false);
+              }
+            }}
             autoComplete="off"
             required
           />
 
           {suggest && brandName.trim() !== "" && (
-            <Suspense fallback={<CircularLoader />}>
+            <Suspense fallback={null}>
               <DropDown
                 options={filteredBrands}
                 onSelect={handleSelectSuggestion}

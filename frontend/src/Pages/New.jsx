@@ -460,7 +460,7 @@ function NewStock() {
         </div>
 
         <div className="selectedItems">
-          <Suspense fallback={<CircularLoader />}>
+          <Suspense fallback={null}>
             <SelectedItemsTable
               data={fetchedDesigns}
               onRemove={handleRemoveDesign}
