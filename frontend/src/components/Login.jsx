@@ -1,9 +1,11 @@
-import React, { useContext, useState, useEffect } from "react";
-import DropDown from "../components/DropDown.jsx";
+import React, { useContext, useState, useEffect, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Login.css";
 import axios from "axios";
 import { BrandNameContext } from "../contexts/BrandNameContext.jsx";
+import CircularLoader from "../components/CircularLoader.jsx";
+
+const DropDown = lazy(() => import("../components/DropDown.jsx"));
 
 const Login = () => {
   const [brands, setBrands] = useState([]);
@@ -69,11 +71,15 @@ const Login = () => {
             required
           />
 
-          {suggest && brandName.trim() !== "" && <DropDown
-            options={filteredBrands}
-            onSelect={handleSelectSuggestion}
-            className="brand-name-suggestions"
-          />}
+          {suggest && brandName.trim() !== "" && (
+            <Suspense fallback={<CircularLoader />}>
+              <DropDown
+                options={filteredBrands}
+                onSelect={handleSelectSuggestion}
+                className="brand-name-suggestions"
+              />
+            </Suspense>
+          )}
         </div>
 
         <div className="submitSection">

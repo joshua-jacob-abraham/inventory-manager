@@ -3,12 +3,15 @@ import { useNavigate } from "react-router-dom";
 import React, { useState, useContext, useEffect } from "react";
 import Heading from "../components/Heading.jsx";
 import Checkbox from "../components/Checkbox.jsx";
-import SelectedItemsTable from "../components/Selected.jsx";
+import { Suspense, lazy } from "react";
 import axios from "axios";
 import CheckGST from "../components/CheckGST.jsx";
 import { BrandNameContext } from "../contexts/BrandNameContext.jsx";
 import Loading from "../components/Loading.jsx";
 import DropDown from "../components/DropDown.jsx";
+import CircularLoader from "../components/CircularLoader.jsx";
+
+const SelectedItemsTable = lazy(() => import("../components/Selected.jsx"));
 
 let fetchedDesigns = [];
 
@@ -457,10 +460,12 @@ function NewStock() {
         </div>
 
         <div className="selectedItems">
-          <SelectedItemsTable
-            data={fetchedDesigns}
-            onRemove={handleRemoveDesign}
-          />
+          <Suspense fallback={<CircularLoader />}>
+            <SelectedItemsTable
+              data={fetchedDesigns}
+              onRemove={handleRemoveDesign}
+            />
+          </Suspense>
         </div>
       </div>
     </div>

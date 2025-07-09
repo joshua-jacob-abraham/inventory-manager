@@ -2,13 +2,16 @@ import "../styles/Return.css";
 import Heading from "../components/Heading.jsx";
 import CheckboxSize from "../components/CheckboxSize.jsx";
 import React, { useState, useContext, useEffect } from "react";
-import SelectedReturn from "../components/SelectedReturn.jsx";
+import { Suspense, lazy } from "react";
 import { BrandNameContext } from "../contexts/BrandNameContext.jsx";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Loading from "../components/Loading.jsx";
 import DropDown from "../components/DropDown.jsx";
 import flowerImg from "../assets/flower.avif";
+import CircularLoader from "../components/CircularLoader.jsx";
+
+const SelectedReturn = lazy(() => import("../components/SelectedReturn.jsx"));
 
 let fetchedReturnedDesigns = [];
 
@@ -437,10 +440,12 @@ function ReturnStock() {
         </div>
 
         <div className="selectedItemsReturn">
-          <SelectedReturn
-            data={fetchedReturnedDesigns}
-            onRemove={handleRemoveReturnItem}
-          />
+          <Suspense fallback={<CircularLoader />}>
+            <SelectedReturn
+              data={fetchedReturnedDesigns}
+              onRemove={handleRemoveReturnItem}
+            />
+          </Suspense>
         </div>
 
         <div className="grayDiv"></div>

@@ -2,14 +2,17 @@ import "../styles/View.css";
 import axios from "axios";
 import Heading from "../components/Heading.jsx";
 import React, { useState, useContext } from "react";
-import ViewedItemsTable from "../components/Viewed.jsx";
 import Check from "../components/Check.jsx";
 import { BrandNameContext } from "../contexts/BrandNameContext.jsx";
 import { useNavigate } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
-import DropDown from "../components/DropDown.jsx";
-import Loading from "../components/Loading.jsx";
+import { Suspense, lazy } from "react";
+import CircularLoader from "../components/CircularLoader.jsx";
+
+const ViewedItemsTable = React.lazy(() => import("../components/Viewed.jsx"));
+const DropDown = React.lazy(() => import("../components/DropDown.jsx"));
+const Loading = React.lazy(() => import("../components/Loading.jsx"));
 
 function ViewStock() {
   const navigate = useNavigate();
@@ -223,7 +226,11 @@ function ViewStock() {
         onDoubleClick={handleDoubleClick}
       />
 
-      {loading && <Loading />}
+      {loading && (
+        <Suspense fallback={<CircularLoader />}>
+          <Loading />
+        </Suspense>
+      )}
 
       <div className="viewstock">
         <div
@@ -243,14 +250,16 @@ function ViewStock() {
           />
 
           {suggest && storeName.trim() !== "" && (
-            <DropDown
-              options={filteredStores}
-              onSelect={handleSelectSuggestion}
-              className="store-name-suggestions-view"
-            />
+            <Suspense fallback={<CircularLoader />}>
+              <DropDown
+                options={filteredStores}
+                onSelect={handleSelectSuggestion}
+                className="store-name-suggestions-view"
+              />
+            </Suspense>
           )}
         </div>
-        
+
         <input
           type="text"
           placeholder="new or return or sales"
@@ -288,7 +297,9 @@ function ViewStock() {
         </button>
 
         <div className="viewedItems">
-          <ViewedItemsTable data={retrievedData} isDisabled={isDisabled} />
+          <Suspense fallback={<CircularLoader />}>
+            <ViewedItemsTable data={retrievedData} isDisabled={isDisabled} />
+          </Suspense>
         </div>
       </div>
     </div>

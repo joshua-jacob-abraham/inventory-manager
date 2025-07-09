@@ -1,11 +1,6 @@
 import "../styles/Dash.css";
 import { useContext } from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  useNavigate,
-} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Heading from "../components/Heading.jsx";
 import { BrandNameContext } from "../contexts/BrandNameContext.jsx";
 
