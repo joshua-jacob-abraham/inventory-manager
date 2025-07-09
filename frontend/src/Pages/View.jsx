@@ -8,11 +8,13 @@ import { useNavigate } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { Suspense, lazy } from "react";
-import CircularLoader from "../components/CircularLoader.jsx";
 
 const ViewedItemsTable = React.lazy(() => import("../components/Viewed.jsx"));
 const DropDown = React.lazy(() => import("../components/DropDown.jsx"));
 const Loading = React.lazy(() => import("../components/Loading.jsx"));
+const ViewedRecordsTable = React.lazy(() =>
+  import("../components/ViewedRecordsTable.jsx")
+);
 
 function ViewStock() {
   const navigate = useNavigate();
@@ -28,6 +30,8 @@ function ViewStock() {
   const [stores, setStores] = useState([]);
   const [filteredStores, setFilteredStores] = useState([]);
   const [suggest, setSuggest] = useState(false);
+
+  const [isRangeView, setIsRangeView] = useState(false);
 
   useEffect(() => {
     axios
@@ -53,6 +57,26 @@ function ViewStock() {
     setFilteredStores(filtered);
   };
 
+  const [shouldFetchRecord, setShouldFetchRecord] = useState(false);
+
+  const handleViewRecordClick = (record) => {
+    setStoreName(record.store);
+    setFromDate(record.date);
+    setToDate(record.date);
+    setAction(record.action);
+
+    setIsRangeView(false);
+    setShouldFetchRecord(true);
+  };
+
+  useEffect(() => {
+  if (shouldFetchRecord) {
+    handleGet();              
+    setShouldFetchRecord(false);
+  }
+}, [shouldFetchRecord]);
+
+
   const handleSelectSuggestion = (selectedName) => {
     setStoreName(selectedName);
     setFilteredStores([]);
@@ -63,7 +87,8 @@ function ViewStock() {
 
   const [storeName, setStoreName] = useState(passedState.store_name || "");
   const [action, setAction] = useState(passedState.action || "");
-  const [date, setDate] = useState(passedState.date || "");
+  const [fromDate, setFromDate] = useState(passedState.date || "");
+  const [toDate, setToDate] = useState(passedState.date || "");
 
   const { brandName } = useContext(BrandNameContext);
   const [isDisabled, setIsDisabled] = useState(false);
@@ -87,7 +112,7 @@ function ViewStock() {
         {
           params: {
             store_name: storeName,
-            date: date,
+            date: fromDate,
             action: action,
           },
           responseType: "blob",
@@ -100,7 +125,7 @@ function ViewStock() {
 
       const a = document.createElement("a");
       a.href = pdfUrl;
-      a.download = `${storeName}_${date}_${action}_stock.pdf`;
+      a.download = `${storeName}_${fromDate}_${action}_stock.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -126,7 +151,7 @@ function ViewStock() {
         {
           params: {
             store_name: storeName,
-            date: date,
+            date: fromDate,
             action: action,
           },
           responseType: "blob",
@@ -141,7 +166,7 @@ function ViewStock() {
 
       const a = document.createElement("a");
       a.href = excelUrl;
-      a.download = `${storeName}_${date}_${action}_stock.xlsx`;
+      a.download = `${storeName}_${fromDate}_${action}_stock.xlsx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -187,17 +212,42 @@ function ViewStock() {
     } else {
       try {
         setLoading(true);
-        const response = await axios.get(
-          `http://localhost:8000/view_action/${encodeURIComponent(
-            brandName
-          )}/${encodeURIComponent(storeName)}/${date}/${action}`
-        );
 
-        setRetrievedData(response.data.data);
-        console.log(response);
-        if (response.data.data.length == 0) {
-          setLoading(false);
-          alert(response.data.message);
+        if (fromDate === toDate) {
+          const response = await axios.get(
+            `http://localhost:8000/view_action/${encodeURIComponent(
+              brandName
+            )}/${encodeURIComponent(storeName)}/${fromDate}/${action}`
+          );
+          setRetrievedData(response.data.data);
+          setIsRangeView(false);
+
+          if (response.data.data.length == 0) {
+            setLoading(false);
+            setTimeout(() => {
+              alert(response.data.message);
+            }, 0);
+          }
+        } else {
+          const response = await axios.get(
+            `http://localhost:8000/view_range/${encodeURIComponent(brandName)}`,
+            {
+              params: {
+                fromDate: fromDate,
+                toDate: toDate,
+                store_name: storeName || undefined,
+                action: action || undefined,
+              },
+            }
+          );
+          setRetrievedData(response.data.data);
+          setIsRangeView(true);
+          if (response.data.data.length == 0) {
+            setLoading(false);
+            setTimeout(() => {
+              alert(response.data.message);
+            }, 0);
+          }
         }
       } catch (error) {
         console.error(
@@ -268,12 +318,21 @@ function ViewStock() {
           value={action}
           onChange={(e) => setAction(e.target.value)}
         />
+
         <input
           type="date"
-          className="dateView"
+          className="fromDateView"
           disabled={isDisabled}
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
+          value={fromDate}
+          onChange={(e) => setFromDate(e.target.value)}
+        />
+
+        <input
+          type="date"
+          className="toDateView"
+          disabled={isDisabled}
+          value={toDate}
+          onChange={(e) => setToDate(e.target.value)}
         />
 
         <Check onChange={handleCheckChange} />
@@ -297,9 +356,18 @@ function ViewStock() {
         </button>
 
         <div className="viewedItems">
-          <Suspense fallback={null}>
-            <ViewedItemsTable data={retrievedData} isDisabled={isDisabled} />
-          </Suspense>
+          {isRangeView ? (
+            <Suspense fallback={null}>
+              <ViewedRecordsTable
+                records={retrievedData}
+                onViewRecord={handleViewRecordClick}
+              />
+            </Suspense>
+          ) : (
+            <Suspense fallback={null}>
+              <ViewedItemsTable data={retrievedData} isDisabled={isDisabled} />
+            </Suspense>
+          )}
         </div>
       </div>
     </div>

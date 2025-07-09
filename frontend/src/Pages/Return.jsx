@@ -352,7 +352,9 @@ function ReturnStock() {
   };
 
   return (
-    <div className="dashboard">
+    <div className="dashboard" style={{
+      maxWidth:"1000px",
+    }}>
       <Heading
         name={brandName}
         onClick={handleClick}

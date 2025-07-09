@@ -53,44 +53,8 @@
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* .selected-table .remove-btn {
-  background-color: #FF6347; 
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 6px 12px;
-  cursor: pointer;
-  font-size: 12px;
-  text-transform: uppercase;
-  transition: background-color 0.3s ease;
-} */
-
-/* 
-.selected-table .remove-btn:hover {
-  background-color: #e55347;
-} */
-
-/* .selected-table .remove-btn:focus {
-  outline: none;
-}
-
-.selected-table td .remove-btn {
-  margin-top: 5px;
-  display: inline-block;
-  text-align: center;
-}
-
-.selected-table td .remove-btn {
-  border-radius: 5px;
-}
-
-.selected-table td .remove-btn:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-} */
-
 .selected-table td:first-child {
-  font-weight: bold;
+  font-weight: 500;
 }
 
 .remove-btn {
@@ -102,5 +66,21 @@
 }
 
 .remove-btn:hover{
+  background: none;
+}
+
+.viewRecord{
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: blue;
+  text-decoration: underline;
+}
+
+.viewRecord:focus{
+  outline: none;
+}
+
+.viewRecord:hover{
   background: none;
 }

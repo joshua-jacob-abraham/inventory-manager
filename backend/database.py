@@ -31,6 +31,16 @@ def get_db_connection(
 						""")
 						connection.commit()
 
+						cursor.execute("""
+							CREATE TABLE IF NOT EXISTS records (
+								date DATE,
+								store VARCHAR(100),
+								action VARCHAR(50)
+							);
+						""")
+
+						connection.commit()
+
 					except ms.Error as e:
 						connection.close()
 						raise Exception(f"Error creating database: {str(e)}")

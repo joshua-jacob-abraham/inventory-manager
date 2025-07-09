@@ -2,8 +2,9 @@ from fastapi import FastAPI,HTTPException,Query
 from fastapi.responses import FileResponse
 import mysql.connector as ms
 from fastapi.middleware.cors import CORSMiddleware
+from crud import insert_into_records
 from models import StockItem,ReturnedItem
-from services import add_to_stores, is_valid_name, make_valid_table_name, reverse_table_name, submit_new_stock,add_design_temp,temp_stock_data,from_shelf,lookup,add_design_temp_return,submit_returned_stock,remove_from_temp,generate_pdf_bytes,lookupforprint,submit_sales_stock
+from services import add_to_stores, is_valid_name, lookupRange, make_valid_table_name, reverse_table_name, submit_new_stock,add_design_temp,temp_stock_data,from_shelf,lookup,add_design_temp_return,submit_returned_stock,remove_from_temp,generate_pdf_bytes,lookupforprint,submit_sales_stock
 from database import get_db_connection
 from datetime import datetime
 from openpyxl.styles import Font, Alignment
@@ -11,6 +12,7 @@ from fastapi.responses import StreamingResponse, JSONResponse
 import io
 import pandas as pd
 from openpyxl.styles import Border, Side
+from typing import Optional
 
 app = FastAPI()
 
@@ -237,7 +239,36 @@ async def view_action(brand_name : str,store_name : str, date: str, action : str
 	
 	except Exception as e:
 		raise HTTPException(status_code=500, detail=str(e))
+	
+#view records in date range
+@app.get("/view_range/{brand_name}")
+async def view_range(
+    brand_name: str,
+    fromDate: str,
+    toDate: str,
+    store_name: Optional[str] = Query(None),
+    action: Optional[str] = Query(None)
+):
+    brand_name = make_valid_table_name(brand_name)
 
+    try:
+        connection = get_db_connection(brand_name)
+        action_on_range= lookupRange(fromDate, toDate, store_name, action, connection)
+        connection.close()
+
+        if not action_on_range:
+            return {
+                "message": f"No actions performed from {fromDate} to {toDate}.",
+                "data": []
+            }
+
+        return {
+            "message": f"Records from {fromDate} to {toDate}",
+            "data": action_on_range
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/submit/{brand_name}/{action}")
 async def submition_handler(
@@ -258,6 +289,11 @@ async def submition_handler(
 
 	try:
 		connection = get_db_connection(brand_name)
+		cursor = connection.cursor()
+		insert_into_records(cursor,reverse_table_name(store_name),action,date)
+		connection.commit()
+		cursor.close()
+
 		if(action == "new"):
 			store_key = f"{store_name}_{formatted_date}_new_stock"
 			table_name = f"{store_name}_{formatted_date}_new_stock"
@@ -424,7 +460,6 @@ async def print_table_excel(
 					"Content-Disposition": f"attachment; filename={store_name}_{formatted_date}_{action}_stock.xlsx"
 			}
 	)
-
 
 if __name__ == "__main__":
     import uvicorn

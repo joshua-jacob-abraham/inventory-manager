@@ -40,3 +40,9 @@ def insert_into_returned(cursor,table_name : str,store_key : str, returned_item 
         SELECT item,design_code, sp_per_item, gst_rate, hsncode, taxable_amount_per_item, tax_amount_per_item, %s, size
         FROM {store_key} WHERE design_code = %s""",(returned_item.quantity, returned_item.design_code)
     )
+
+def insert_into_records(cursor, storeName : str, action : str, date : str):
+     cursor.execute(
+            f"""
+            INSERT INTO records (date,store,action) VALUES (%s, %s, %s)""", (date, storeName, action)
+     )

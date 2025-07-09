@@ -146,6 +146,29 @@ def lookup(store_name : str, date : str, action : str, connection):
     finally:
         cursor.close()
 
+#lookup range
+def lookupRange(fromDate, toDate, store_name, action, connection):
+    cursor = connection.cursor()
+    
+    query = "SELECT date, store, action FROM records WHERE date BETWEEN %s AND %s"
+    params = [fromDate, toDate]
+
+    if store_name:
+        query += " AND store = %s"
+        params.append(store_name)
+
+    if action:
+        query += " AND action = %s"
+        params.append(action)
+
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+
+    col_names = [desc[0] for desc in cursor.description]
+    result = [dict(zip(col_names, row)) for row in rows]
+
+    return result        
+
 #return logic
 def add_design_temp_return(store_key : str, returned_item : ReturnedItem):
     if store_key not in temp_stock_data:

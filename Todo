@@ -1,0 +1,3 @@
+in view, two dates input taken. make a table in db to store tablename, storename, action, date. make an endpoint to take two dates and give records in between.
+
+selects one record, makes fromdate = todate. calls as before.
