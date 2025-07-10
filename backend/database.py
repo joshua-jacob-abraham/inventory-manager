@@ -25,18 +25,39 @@ def get_db_connection(
 						connection.database = database
 
 						cursor.execute("""
-							CREATE TABLE IF NOT EXISTS stores (
-								store_name VARCHAR(255)
-							);
-						""")
-						connection.commit()
-
-						cursor.execute("""
 							CREATE TABLE IF NOT EXISTS records (
 								date DATE,
 								store VARCHAR(100),
 								action VARCHAR(50)
 							);
+						""")
+
+						connection.commit()
+
+						cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS Dresses (
+                        design_id INT PRIMARY KEY AUTO_INCREMENT,
+                        design_code VARCHAR(50) UNIQUE NOT NULL,
+                        price DECIMAL(10,2) NOT NULL
+                    );
+                """)
+
+						cursor.execute("""
+								CREATE TABLE IF NOT EXISTS stores (
+										store_id INT PRIMARY KEY AUTO_INCREMENT,
+										store_name VARCHAR(100) UNIQUE NOT NULL
+								);
+						""")
+
+						cursor.execute("""
+								CREATE TABLE IF NOT EXISTS Dress_Stock (
+										design_id INT NOT NULL,
+										store_id INT NOT NULL,
+										quantity INT NOT NULL,
+										PRIMARY KEY (design_id, store_id),
+										FOREIGN KEY (design_id) REFERENCES Dresses(design_id),
+										FOREIGN KEY (store_id) REFERENCES stores(store_id)
+								);
 						""")
 
 						connection.commit()

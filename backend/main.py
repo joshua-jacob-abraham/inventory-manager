@@ -4,7 +4,7 @@ import mysql.connector as ms
 from fastapi.middleware.cors import CORSMiddleware
 from crud import insert_into_records
 from models import StockItem,ReturnedItem
-from services import add_to_stores, is_valid_name, lookupRange, make_valid_table_name, reverse_table_name, submit_new_stock,add_design_temp,temp_stock_data,from_shelf,lookup,add_design_temp_return,submit_returned_stock,remove_from_temp,generate_pdf_bytes,lookupforprint,submit_sales_stock
+from services import add_to_stores, get_code_details, is_valid_name, lookupRange, make_valid_table_name, reverse_table_name, submit_new_stock,add_design_temp,temp_stock_data,from_shelf,lookup,add_design_temp_return,submit_returned_stock,remove_from_temp,generate_pdf_bytes,lookupforprint,submit_sales_stock
 from database import get_db_connection
 from datetime import datetime
 from openpyxl.styles import Font, Alignment
@@ -109,7 +109,7 @@ async def get_stores(
 		connection = get_db_connection(brand_name)
 		cursor = connection.cursor()
 		
-		cursor.execute("SELECT * FROM stores;")
+		cursor.execute("SELECT store_name FROM stores;")
 
 		thestores = [row[0] for row in cursor.fetchall()]
 		for i in range(0,len(thestores)):
@@ -220,7 +220,32 @@ async def view_shelf(brand_name : str, store_name : str):
 	
 	except Exception as e:
 		raise HTTPException(status_code=500, detail=str(e))
-	
+
+#view code.
+@app.get("/view_code/{brand_name}/{design_code}")
+async def view_code(brand_name: str, design_code: str):
+    brand_name = make_valid_table_name(brand_name)
+    design_code = design_code.strip()
+
+    try:
+        connection = get_db_connection(brand_name)
+        code_data = get_code_details(design_code, connection)
+        connection.close()
+
+        if not code_data:
+            return {
+                "message": f"Design code '{design_code}' not found.",
+                "data": {}
+            }
+
+        return {
+            "message": f"Stock locations for design code '{design_code}'.",
+            "data": code_data
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 #view action on a date
 @app.get("/view_action/{brand_name}/{store_name}/{date}/{action}")
 async def view_action(brand_name : str,store_name : str, date: str, action : str):
