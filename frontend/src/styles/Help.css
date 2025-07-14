@@ -104,10 +104,10 @@
 }
 
 .resultTable th, .resultTable td {
-  padding: 3px 6px;
+  padding: 4px 6px;
   border: 1px solid #ccc;
-  text-align: center;
-  font-size: 14px;
+  /* text-align: center; */
+  font-size: 13px;
 }
 
 .errorMessage {

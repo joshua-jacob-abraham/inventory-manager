@@ -81,7 +81,11 @@ const Help = () => {
   };
 
   const capitalize = (str) => {
-    return str.charAt(0).toUpperCase() + str.slice(1);
+    return str
+      .replace(/_/g, " ")
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   };
 
   const handleSubmit = async () => {
@@ -241,31 +245,28 @@ const Help = () => {
               </div>
               {searchError && <p className="errorMessage">{searchError}</p>}
 
-              {searchResult && (
+              {Array.isArray(searchResult) && searchResult.length > 0 && (
                 <div className="codeResult">
-                  <p
-                    style={{
-                      margin: "0px",
-                      fontSize: "14px",
-                    }}
-                  >
-                    Price: ₹{searchResult.price}
-                  </p>
-
                   <table className="resultTable">
                     <thead>
                       <tr>
+                        <th>Design Code</th>
                         <th>Store</th>
-                        <th>Quantity</th>
+                        <th>Price</th>
+                        <th>Qty</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {searchResult.locations.map((loc, index) => (
-                        <tr key={index}>
-                          <td>{capitalize(loc.store_name)}</td>
-                          <td>{loc.quantity}</td>
-                        </tr>
-                      ))}
+                      {searchResult.map((result, i) =>
+                        result.locations.map((loc, j) => (
+                          <tr key={`${i}-${j}`}>
+                            <td>{result.design_code.toUpperCase()}</td>
+                            <td>{capitalize(loc.store_name)}</td>
+                            <td>₹{result.price}</td>
+                            <td>{loc.quantity}</td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>

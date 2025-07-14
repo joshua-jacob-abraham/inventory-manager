@@ -171,35 +171,45 @@ def get_code_details(design_code: str, connection):
     cursor = connection.cursor(dictionary=True)
 
     try:
-        cursor.execute(
-            "SELECT design_id, price FROM Dresses WHERE design_code = %s",
-            (design_code,)
-        )
-        design = cursor.fetchone()
+        # Case-insensitive search using LOWER()
+        cursor.execute("""
+            SELECT design_id, design_code, price 
+            FROM Dresses 
+            WHERE LOWER(design_code) LIKE %s
+        """, (f"%{design_code.lower()}%",))
 
-        if not design:
+        designs = cursor.fetchall()
+
+        if not designs:
             return None
 
-        design_id = design["design_id"]
-        price = design["price"]
+        results = []
 
-        cursor.execute("""
-            SELECT s.store_name, ds.quantity
-            FROM Dress_Stock ds
-            JOIN stores s ON ds.store_id = s.store_id
-            WHERE ds.design_id = %s
-        """, (design_id,))
-        locations = cursor.fetchall()
+        for design in designs:
+            design_id = design["design_id"]
+            code = design["design_code"]
+            price = design["price"]
 
-        return {
-            "design_code": design_code,
-            "price": price,
-            "locations": locations  # list of dicts with store_name, quantity
-        }
+            # Fetch locations for this design
+            cursor.execute("""
+                SELECT s.store_name, ds.quantity
+                FROM Dress_Stock ds
+                JOIN stores s ON ds.store_id = s.store_id
+                WHERE ds.design_id = %s
+            """, (design_id,))
+
+            locations = cursor.fetchall()
+
+            results.append({
+                "design_code": code,
+                "price": price,
+                "locations": locations
+            })
+
+        return results
 
     finally:
-        cursor.close()
-       
+        cursor.close()       
 
 #view action on a date
 def lookup(store_name : str, date : str, action : str, connection):
