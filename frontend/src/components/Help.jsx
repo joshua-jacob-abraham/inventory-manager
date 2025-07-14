@@ -12,10 +12,12 @@ const Help = () => {
   const [atHome, setAtHome] = useState(false);
   const [atDash, setAtDash] = useState(false);
   const [atNewOrReturn, setAtNewOrReturn] = useState(false);
+  const [atView, setAtView] = useState(false);
 
   useEffect(() => {
     setAtHome(location.pathname === "/home");
     setAtDash(location.pathname === "/dash");
+    setAtView(location.pathname === "/view");
     setAtNewOrReturn(
       location.pathname === "/add-new" || location.pathname === "add-returned"
     );
@@ -31,10 +33,56 @@ const Help = () => {
   const [oldBrand, setOldBrand] = useState("");
   const [newBrand, setNewBrand] = useState("");
 
-  const { brandname, setBrandName, setNeedsRefresh } = useContext(BrandNameContext);
+  const [inSearch, setInSearch] = useState(false);
+
+  const { brandName, setBrandName, setNeedsRefresh } =
+    useContext(BrandNameContext);
 
   const [oldStore, setOldStore] = useState("");
   const [newStore, setNewStore] = useState("");
+
+  const [designCode, setDesignCode] = useState("");
+
+  const handleSearchCode = async () => {
+    setInSearch(true);
+  };
+
+  const [searchResult, setSearchResult] = useState(null);
+  const [searchError, setSearchError] = useState("");
+
+  const handleCodeSearch = async () => {
+    try {
+      setSearchError("");
+      setSearchResult(null);
+
+      const trimmedCode = designCode.trim();
+      if (!trimmedCode) {
+        setSearchError("Please enter a valid design code.");
+        return;
+      }
+
+      const response = await axios.get(
+        `http://localhost:8000/view_code/${encodeURIComponent(
+          brandName
+        )}/${trimmedCode}`
+      );
+
+      const { data, message } = response.data;
+
+      if (!data || Object.keys(data).length === 0) {
+        setSearchError(message);
+      } else {
+        setSearchResult(data);
+      }
+    } catch (error) {
+      console.error("Error searching code:", error);
+      setSearchError("Something went wrong while searching.");
+    }
+  };
+
+  const capitalize = (str) => {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  };
 
   const handleSubmit = async () => {
     if (renameBrand) {
@@ -56,10 +104,10 @@ const Help = () => {
           }
         );
 
-        if (oldBrand == brandname) {
+        if (oldBrand == brandName) {
           setBrandName(newBrand.trim());
         }
-        
+
         setNeedsRefresh(true);
         setLoading(false);
 
@@ -176,12 +224,68 @@ const Help = () => {
             </button>
           )}
 
+          {inSearch && (
+            <div className="searchBox">
+              <div className="inputPart">
+                <input
+                  className="codeEntry"
+                  placeholder="Enter design code."
+                  onChange={(e) => {
+                    setDesignCode(e.target.value);
+                  }}
+                ></input>
+
+                <button className="codeSearch" onClick={handleCodeSearch}>
+                  Search
+                </button>
+              </div>
+              {searchError && <p className="errorMessage">{searchError}</p>}
+
+              {searchResult && (
+                <div className="codeResult">
+                  <p
+                    style={{
+                      margin: "0px",
+                      fontSize: "14px",
+                    }}
+                  >
+                    Price: ₹{searchResult.price}
+                  </p>
+
+                  <table className="resultTable">
+                    <thead>
+                      <tr>
+                        <th>Store</th>
+                        <th>Quantity</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {searchResult.locations.map((loc, index) => (
+                        <tr key={index}>
+                          <td>{capitalize(loc.store_name)}</td>
+                          <td>{loc.quantity}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {atView && !inSearch && (
+            <button className="searchCode" onClick={handleSearchCode}>
+              Search by Code
+            </button>
+          )}
+
           <button
             className="helpClose"
             onClick={() => {
               setShowHelp(false);
               setRenameMode(false);
               setRenameBrand(false);
+              setInSearch(false);
               setRenameStore(false);
             }}
           >

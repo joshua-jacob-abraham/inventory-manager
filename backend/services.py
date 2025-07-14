@@ -97,7 +97,7 @@ def update_dress_stock(store_name: str, stock_items: list, connection, is_add: b
 
         # Check if stock already exists
         cursor.execute(
-            "SELECT quantity FROM DressStock WHERE design_id = %s AND store_id = %s",
+            "SELECT quantity FROM Dress_Stock WHERE design_id = %s AND store_id = %s",
             (design_id, store_id)
         )
         result = cursor.fetchone()
@@ -107,14 +107,14 @@ def update_dress_stock(store_name: str, stock_items: list, connection, is_add: b
             new_qty = existing_qty + item.quantity if is_add else max(existing_qty - item.quantity, 0)
 
             cursor.execute(
-                "UPDATE DressStock SET quantity = %s WHERE design_id = %s AND store_id = %s",
+                "UPDATE Dress_Stock SET quantity = %s WHERE design_id = %s AND store_id = %s",
                 (new_qty, design_id, store_id)
             )
         else:
             # Only insert if quantity is non-zero and it's an add operation
             if is_add and item.quantity > 0:
                 cursor.execute(
-                    "INSERT INTO DressStock (design_id, store_id, quantity) VALUES (%s, %s, %s)",
+                    "INSERT INTO Dress_Stock (design_id, store_id, quantity) VALUES (%s, %s, %s)",
                     (design_id, store_id, item.quantity)
                 )
 
@@ -185,7 +185,7 @@ def get_code_details(design_code: str, connection):
 
         cursor.execute("""
             SELECT s.store_name, ds.quantity
-            FROM DressStock ds
+            FROM Dress_Stock ds
             JOIN stores s ON ds.store_id = s.store_id
             WHERE ds.design_id = %s
         """, (design_id,))

@@ -29,22 +29,27 @@
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
-.helpClose, .renameButton{
+.helpClose, .renameButton, .searchCode, .codeSearch{
   border-radius: 2px;
   border: 1px solid black;
   outline: none;
   margin-right: 5px;
 }
 
-.helpClose:hover, .renameButton:hover{
+.helpClose:hover, .renameButton:hover, .searchCode:hover, .codeSearch:hover{
   background-color: white;
 }
 
-.helpClose:focus{
+.helpClose:focus, .searchCode:focus{
   outline: none;
 }
 
-.renameBox{
+.codeSearch{
+  margin-left: 5px;
+  margin-right: 0px;
+}
+
+.renameBox, .searchBox{
   border: 1px solid rgb(121, 121, 121);
   border-radius: 2px;
   margin-bottom: 5px;
@@ -54,7 +59,17 @@
   justify-content: space-between;
 }
 
-.names{
+.searchBox{
+  display: flex;
+  flex-direction: column;
+}
+
+.inputPart{
+  display: flex;
+  flex-direction: row;
+}
+
+.names, .codeEntry{
   box-sizing: border-box;
   outline: none;
   width: 48%;
@@ -66,6 +81,38 @@
   font-family: Arial, sans-serif;
 }
 
-.names::placeholder{
+.names::placeholder, .codeEntry::placeholder{
   color: rgb(77, 77, 77);
+}
+
+.codeEntry{
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.293);
+}
+
+.codeResult {
+  margin-top: 2px;
+  border-radius: 2px;
+  border: 1px solid rgba(115, 115, 115, 0.53);
+  padding: 5px;
+}
+
+.resultTable {
+  width: 100%;
+  margin-top: 5px;
+  border-collapse: collapse;
+}
+
+.resultTable th, .resultTable td {
+  padding: 3px 6px;
+  border: 1px solid #ccc;
+  text-align: center;
+  font-size: 14px;
+}
+
+.errorMessage {
+  color: rgb(38, 36, 36);
+  margin: 0px;
+  margin-top: 12px;
+  font-size: 14px;
 }

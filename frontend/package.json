@@ -2,7 +2,7 @@
   "name": "inventory",
   "author": "abraham",
   "private": true,
-  "version": "0.0.1",
+  "version": "2.0.1",
   "type": "module",
   "description": "Inventory Management System",
   "scripts": {
