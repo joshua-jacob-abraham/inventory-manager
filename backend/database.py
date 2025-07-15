@@ -37,7 +37,7 @@ def get_db_connection(
 						cursor.execute("""
                     CREATE TABLE IF NOT EXISTS Dresses (
                         design_id INT PRIMARY KEY AUTO_INCREMENT,
-                        design_code VARCHAR(50) UNIQUE NOT NULL,
+                        design_code VARCHAR(50) NOT NULL,
                         price DECIMAL(10,2) NOT NULL
                     );
                 """)

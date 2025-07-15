@@ -83,8 +83,12 @@ def update_dress_stock(store_name: str, stock_items: list, connection, is_add: b
         # item must have: design_code, price, quantity
 
         # Ensure design exists
-        cursor.execute("SELECT design_id FROM Dresses WHERE design_code = %s", (item.design_code,))
+        cursor.execute(
+            "SELECT design_id FROM Dresses WHERE design_code = %s AND price = %s",
+            (item.design_code, item.price)
+        )
         result = cursor.fetchone()
+
         if result:
             design_id = result[0]
         else:
@@ -171,7 +175,6 @@ def get_code_details(design_code: str, connection):
     cursor = connection.cursor(dictionary=True)
 
     try:
-        # Case-insensitive search using LOWER()
         cursor.execute("""
             SELECT design_id, design_code, price 
             FROM Dresses 
@@ -190,11 +193,12 @@ def get_code_details(design_code: str, connection):
             code = design["design_code"]
             price = design["price"]
 
-            # Fetch locations for this design
+            # Fetch locations for this design and price
             cursor.execute("""
-                SELECT s.store_name, ds.quantity
+                SELECT s.store_name, ds.quantity, d.price
                 FROM Dress_Stock ds
                 JOIN stores s ON ds.store_id = s.store_id
+                JOIN Dresses d ON ds.design_id = d.design_id
                 WHERE ds.design_id = %s
             """, (design_id,))
 

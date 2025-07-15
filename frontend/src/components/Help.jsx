@@ -52,6 +52,7 @@ const Help = () => {
 
   const handleCodeSearch = async () => {
     try {
+      setLoading(true);
       setSearchError("");
       setSearchResult(null);
 
@@ -77,6 +78,8 @@ const Help = () => {
     } catch (error) {
       console.error("Error searching code:", error);
       setSearchError("Something went wrong while searching.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -288,6 +291,8 @@ const Help = () => {
               setRenameBrand(false);
               setInSearch(false);
               setRenameStore(false);
+              setSearchResult("");
+              setSearchError("");
             }}
           >
             Close
