@@ -13,13 +13,14 @@ import CircularLoader from "../components/CircularLoader.jsx";
 
 const SelectedItemsTable = lazy(() => import("../components/Selected.jsx"));
 
-let fetchedDesigns = [];
+const [fetchedDesigns, setFetchedDesigns] = useState([]);
 
 function NewStock() {
   const navigate = useNavigate();
 
   const handleClick = () => {
     if (!data.storeName.trim()) {
+      setFetchedDesigns([]);
       navigate("/dash");
     }
   };
@@ -154,12 +155,23 @@ function NewStock() {
           },
         }
       );
-      fetchedDesigns = res.data.data;
-      setReset(true);
-      setTimeout(() => setReset(false), 0);
+      setFetchedDesigns(res.data.data);
     } catch (err) {
-      alert("Failed to remove the design.");
+      alert(err?.response?.data?.detail || "Failed to remove the design.");
       console.error(err);
+    }
+  };
+
+  const handleClearAll = async () => {
+    try {
+      await axios.post("http://localhost:8000/clear/temp", null, {
+        params: {
+          store_key: data.storeKey,
+        },
+      });
+      setFetchedDesigns([]);
+    } catch (err) {
+      console.error("Error clearing temp data:", err);
     }
   };
 
@@ -263,7 +275,7 @@ function NewStock() {
       const response = await axios.get(
         `http://localhost:8000/view/${newStoreKey}`
       );
-      fetchedDesigns = response.data.data; //Store designs from response
+      setFetchedDesigns(response.data.data);
     } catch (error) {
       console.error(
         "Error fetching stock designs:",
@@ -363,7 +375,7 @@ function NewStock() {
         gstApplicable: false,
       });
 
-      fetchedDesigns = [];
+      setFetchedDesigns([]);
 
       document
         .querySelectorAll('.box .checkbox-wrapper-52 input[type="checkbox"]')
