@@ -13,13 +13,13 @@ import CircularLoader from "../components/CircularLoader.jsx";
 
 const SelectedReturn = lazy(() => import("../components/SelectedReturn.jsx"));
 
-let fetchedReturnedDesigns = [];
-
 function ReturnStock() {
+  const [fetchedReturnedDesigns, setFetchedReturnedDesigns] = useState([]);
   const navigate = useNavigate();
 
   const handleClick = () => {
     if (!data.storeName.trim()) {
+      setFetchedReturnedDesigns([]);
       navigate("/dash");
     }
   };
@@ -133,7 +133,7 @@ function ReturnStock() {
           params: { store_key: data.storeKey },
         }
       );
-      fetchedReturnedDesigns = response.data.data;
+      setFetchedReturnedDesigns(response.data.data);
 
       setData((prev) => ({
         ...prev,
@@ -238,7 +238,7 @@ function ReturnStock() {
       const response = await axios.get(
         `http://localhost:8000/view/${newStoreKey}`
       );
-      fetchedReturnedDesigns = response.data.data; //Store designs from response
+      setFetchedReturnedDesigns(response.data.data); //Store designs from response
       console.log(fetchedReturnedDesigns);
     } catch (error) {
       console.error(
@@ -340,7 +340,7 @@ function ReturnStock() {
         current_designs: [],
       });
 
-      fetchedReturnedDesigns = [];
+      setFetchedReturnedDesigns([]);
 
       document
         .querySelectorAll('.box .checkbox-wrapper-52 input[type="checkbox"]')
