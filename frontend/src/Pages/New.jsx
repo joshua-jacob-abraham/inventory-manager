@@ -1,4 +1,5 @@
 import "../styles/New.css";
+import "../styles/Return.css";
 import { useNavigate } from "react-router-dom";
 import React, { useState, useContext, useEffect } from "react";
 import Heading from "../components/Heading.jsx";
@@ -13,10 +14,9 @@ import CircularLoader from "../components/CircularLoader.jsx";
 
 const SelectedItemsTable = lazy(() => import("../components/Selected.jsx"));
 
-const [fetchedDesigns, setFetchedDesigns] = useState([]);
-
 function NewStock() {
   const navigate = useNavigate();
+  const [fetchedDesigns, setFetchedDesigns] = useState([]);
 
   const handleClick = () => {
     if (!data.storeName.trim()) {
