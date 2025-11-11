@@ -4,7 +4,7 @@ import mysql.connector as ms
 from fastapi.middleware.cors import CORSMiddleware
 from crud import insert_into_records
 from models import StockItem,ReturnedItem
-from services import add_to_stores, get_code_details, is_valid_name, lookupRange, make_valid_table_name, reverse_table_name, submit_new_stock,add_design_temp,temp_stock_data,from_shelf,lookup,add_design_temp_return,submit_returned_stock,remove_from_temp,generate_pdf_bytes,lookupforprint,submit_sales_stock
+from services import add_to_stores, clear_temp_data, get_code_details, is_valid_name, lookupRange, make_valid_table_name, reverse_table_name, submit_new_stock,add_design_temp,temp_stock_data,from_shelf,lookup,add_design_temp_return,submit_returned_stock,remove_from_temp,generate_pdf_bytes,lookupforprint,submit_sales_stock
 from database import get_db_connection
 from datetime import datetime
 from openpyxl.styles import Font, Alignment
@@ -356,6 +356,14 @@ async def remove(
 		"message" : "Updated added list",
 		"data" : temp_data
 	}
+
+@app.post("/clear/temp")
+async def clearTemp(store_key: str = Query(...)):
+    temp_data = clear_temp_data(store_key)
+    return {
+        "message": f"Cleared temp data for store '{store_key}'.",
+        "data": temp_data,
+    }
 
 #print table
 @app.post("/printPDF/{brand_name}")
