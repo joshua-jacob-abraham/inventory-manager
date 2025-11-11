@@ -114,13 +114,13 @@
   width: 100px;
   border: 1px solid rgba(128, 128, 128, 0.589);
   height: 16px;
-  font-size: 15px;
+  font-size: small;
   font-family: Arial, Helvetica, sans-serif;
   padding: 5px;
 }
 
 .detail::placeholder {
-  font-size: 15px;
+  font-size: small;
 }
 
 .detail:focus {

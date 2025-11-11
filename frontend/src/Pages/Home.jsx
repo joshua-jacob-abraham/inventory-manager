@@ -9,7 +9,7 @@ function Home() {
   const [isHealthy, setIsHealthy] = useState(null);
 
   useEffect(() => {
-    const checkHealth = async () => {
+    const checkHealth = async (attempt = 1) => {
       try {
         const res = await axios.get("http://localhost:8000/health/db");
 
@@ -20,14 +20,18 @@ function Home() {
           setIsHealthy(false);
         }
       } catch (err) {
-        if (err.response) {
-          // Server responded with an error.
-          alert(`DB issue: ${err.response.data.error || "Unknown error"}`);
+        if (attempt < 4) {
+          if (attempt === 1) {
+            alert("Backend not responding. Trying again in 5 seconds.\nYou can also restart and reopen.");
+          }
+
+          setTimeout(() => {
+            checkHealth(attempt + 1);
+          }, 5000);
         } else {
-          // No response.
-          alert("Backend not responding. Please restart the app.");
+          alert("Backend still not responding after multiple attempts.\nPlease restart your laptop and try again.");
+          setIsHealthy(false);
         }
-        setIsHealthy(false);
       }
     };
 
@@ -39,7 +43,7 @@ function Home() {
       <div className="dashboard">
         <Heading name={"inventerogenesis"} />
         <div className="signupDash">
-          <Login/>
+          <Login />
         </div>
       </div>
     )

@@ -33,6 +33,7 @@ function ReturnStock() {
   const [stores, setStores] = useState([]);
   const [filteredStores, setFilteredStores] = useState([]);
   const [suggest, setSuggest] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
 
   useEffect(() => {
     axios
@@ -152,6 +153,8 @@ function ReturnStock() {
   const [confirmed, setConfirmed] = useState(false);
 
   const handleAddItem = async () => {
+    if (isAdding) return;
+
     if (!confirmed) {
       alert("Confirm design code, store-name, sizes and date before adding.");
       setConfirmed(true);
@@ -171,10 +174,9 @@ function ReturnStock() {
       return; // Exit the function if any of the fields are empty
     }
 
+    setIsAdding(true);
     document.querySelectorAll(".detail").forEach((input) => input.blur());
-
     console.log("Add button clicked");
-
     const validReturnItems = data.returnItems.filter((item) => {
       const isQuantityValid =
         item.quantity !== "" &&
@@ -225,6 +227,7 @@ function ReturnStock() {
           `Error adding ${isSalesMode ? "sales" : "return"} item:`,
           error.response?.data || error.message
         );
+        setIsAdding(false);
       } finally {
         setLoading(false);
       }
@@ -242,6 +245,7 @@ function ReturnStock() {
         "Error fetching stock designs:",
         error.response?.data || error.message
       );
+      setIsAdding(false);
     } finally {
       setLoading(false);
     }
@@ -268,6 +272,7 @@ function ReturnStock() {
     }, 0);
 
     setConfirmed(false);
+    setIsAdding(false);
   };
 
   const handleSubmit = async () => {
@@ -352,9 +357,12 @@ function ReturnStock() {
   };
 
   return (
-    <div className="dashboard" style={{
-      maxWidth:"1000px",
-    }}>
+    <div
+      className="dashboard"
+      style={{
+        maxWidth: "1000px",
+      }}
+    >
       <Heading
         name={brandName}
         onClick={handleClick}
@@ -425,7 +433,11 @@ function ReturnStock() {
         </div>
 
         <div className="theactionReturn">
-          <button className="actionRet actReturn" onClick={handleAddItem}>
+          <button
+            className="actionRet actReturn"
+            onClick={handleAddItem}
+            disabled={isAdding || loading}
+          >
             Add
           </button>
 
@@ -436,7 +448,11 @@ function ReturnStock() {
             {isSalesMode ? "Sales" : "Return"}
           </button>
 
-          <button className="actionRet submitReturn" onClick={handleSubmit}>
+          <button
+            className="actionRet submitReturn"
+            onClick={handleSubmit}
+            disabled={loading}
+          >
             Submit
           </button>
         </div>

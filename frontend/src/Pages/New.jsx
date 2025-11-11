@@ -35,6 +35,7 @@ function NewStock() {
   const [stores, setStores] = useState([]);
   const [filteredStores, setFilteredStores] = useState([]);
   const [suggest, setSuggest] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
 
   useEffect(() => {
     axios
@@ -165,6 +166,7 @@ function NewStock() {
   const [confirmed, setConfirmed] = useState(false);
 
   const handleAddStockItem = async () => {
+    if (isAdding) return;
     if (!confirmed) {
       alert("Confirm design code, store-name, sizes and date before adding.");
       setConfirmed(true);
@@ -181,6 +183,7 @@ function NewStock() {
       return; // Exit the function if any of the fields are empty
     }
 
+    setIsAdding(true);
     document.querySelectorAll(".detail").forEach((input) => input.blur());
 
     console.log("Add button clicked");
@@ -249,6 +252,7 @@ function NewStock() {
           "Error adding stock item:",
           error.response?.data || error.message
         );
+        setIsAdding(false);
       } finally {
         setLoading(false);
       }
@@ -265,6 +269,7 @@ function NewStock() {
         "Error fetching stock designs:",
         error.response?.data || error.message
       );
+      setIsAdding(false);
     } finally {
       setLoading(false);
     }
@@ -292,6 +297,7 @@ function NewStock() {
       setReset(false);
     }, 0);
 
+    setIsAdding(false);
     setConfirmed(false);
   };
 
@@ -449,11 +455,19 @@ function NewStock() {
           ))}
 
           <div className="theaction">
-            <button className="action actAdd" onClick={handleAddStockItem}>
+            <button
+              className="action actAdd"
+              onClick={handleAddStockItem}
+              disabled={isAdding || loading}
+            >
               Add
             </button>
 
-            <button className="action actSubmit" onClick={handleSubmit}>
+            <button
+              className="action actSubmit"
+              onClick={handleSubmit}
+              disabled={loading}
+            >
               Submit
             </button>
           </div>
