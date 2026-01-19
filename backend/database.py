@@ -9,7 +9,7 @@ def get_db_connection(
 			host = "127.0.0.1",
 			user = 'root',
 			password = 'Lepaku@2027',
-			port=3307 )
+			port=3308 )
 		
 		cursor = connection.cursor()
 

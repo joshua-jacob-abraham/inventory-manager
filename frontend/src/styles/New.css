@@ -57,9 +57,18 @@
   grid-row: 2;
 }
 
-.details.itemtype{
+.details.container{ 
   grid-column: 3;
   grid-row: 1;
+}
+
+.itemtype{
+  margin-right: 5px;
+}
+
+.container{
+  display: flex;
+  flex-direction: row;
 }
 
 .date {
@@ -103,7 +112,7 @@
   flex: 1;
   font-size: 2em;
   font-family: Georgia, 'Times New Roman', Times, serif;
-  color: lightcoral;
+  color: #f08080;
   border: none;
   background-color: #FDFCDC;
   cursor: pointer;
@@ -127,4 +136,14 @@
   grid-row: 3 / span 9;
   min-height: 392px;
   max-height: 390px;
+}
+
+.clearAll{
+  width: 40px;
+  border: none;
+  border-radius: 5px;
+}
+
+.details{
+  font-size: small;
 }

@@ -359,7 +359,7 @@ def remove_from_temp(store_key : str, code : str):
 
 def clear_temp_data(store_key: str):
     if store_key not in temp_stock_data:
-        raise HTTPException(status_code=404, detail="Store not found")
+        raise HTTPException(status_code=404, detail="Store not found.")
 
     temp_stock_data[store_key].clear()
     return temp_stock_data[store_key]

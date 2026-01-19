@@ -9,7 +9,7 @@ import CheckGST from "../components/CheckGST.jsx";
 import { BrandNameContext } from "../contexts/BrandNameContext.jsx";
 import Loading from "../components/Loading.jsx";
 import DropDown from "../components/DropDown.jsx";
-import CircularLoader from "../components/CircularLoader.jsx";
+import dustbin from "../assets/dustbin.svg";
 
 const SelectedItemsTable = lazy(() => import("../components/Selected.jsx"));
 
@@ -90,7 +90,7 @@ function NewStock() {
 
   const recalculateGST = (stockItems, gstApplicable) => {
     return stockItems.map((item) => {
-      const gst_rate = gstApplicable ? (item.price < 1000 ? 5 : 12) : 0;
+      const gst_rate = gstApplicable ? (item.price < 2500 ? 5 : 12) : 0;
 
       const taxable_amount =
         gst_rate > 0 ? item.price / (1 + gst_rate / 100) : item.price;
@@ -219,8 +219,8 @@ function NewStock() {
     for (let item of validStockItems) {
       const completeDesignCode =
         item.size == 12
-          ? `${data.designCode}R`
-          : `${data.designCode}${item.size}`;
+          ? `${data.designCode}-R`
+          : `${data.designCode}-${item.size}`;
 
       const capitalizedItem =
         data.item.charAt(0).toUpperCase() + data.item.slice(1).toLowerCase();
@@ -434,13 +434,19 @@ function NewStock() {
           onChange={(e) => setData({ ...data, designCode: e.target.value })}
         />
 
-        <input
-          type="text"
-          placeholder="Item"
-          className="details itemtype"
-          value={data.item}
-          onChange={(e) => setData({ ...data, item: e.target.value })}
-        />
+        <div className="container">
+          <input
+            type="text"
+            placeholder="Item"
+            className="details itemtype"
+            value={data.item}
+            onChange={(e) => setData({ ...data, item: e.target.value })}
+          />
+
+          <button className="action clearAll" onClick={handleClearAll}>
+            <img className="dustbin" src={dustbin} alt="clearAll"/>
+          </button>
+        </div>
 
         <input
           type="date"
