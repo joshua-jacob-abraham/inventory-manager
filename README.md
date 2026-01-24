@@ -39,18 +39,16 @@ frontend/
 |-- electron/
 │   |-- mysql/
 │   │   │-- bin/
-│   │       │-- data/
-│   │       │-- share/
-│   │       │-- lib/
-│   │-- my.ini
+│   │   │-- share/
+│   │   │-- lib/
 ```
 
 ### Steps:
 1. Download and extract MySQL.
 2. Move the extracted files to `frontend/electron/mysql/`.
 3. Ensure that the `bin/`, `data/`, `share/`, and `lib/` folders are present.
-4. The data, share and lib folders must be inside bin directory.
-5. The **my.ini** file is preconfigured inside the `mysql/` directory.
+4. The bin, share and lib folders must be inside mysql directory.
+5. The my.ini file is generated dynamically and stored together with the data folder under the user's roaming application data path (AppData/Roaming).
 
 ---
 
