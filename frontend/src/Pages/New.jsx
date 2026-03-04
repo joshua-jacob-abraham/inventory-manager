@@ -391,9 +391,9 @@ function NewStock() {
       setTimeout(() => {
         setReset(false);
       }, 0);
-
-      setIsSubmitting(false);
     }
+
+    setIsSubmitting(false);
   };
 
   return (

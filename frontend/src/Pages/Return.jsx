@@ -34,6 +34,7 @@ function ReturnStock() {
   const [filteredStores, setFilteredStores] = useState([]);
   const [suggest, setSuggest] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     axios
@@ -57,7 +58,7 @@ function ReturnStock() {
     }));
 
     const filtered = stores.filter((store) =>
-      store.toLowerCase().includes(value.toLowerCase())
+      store.toLowerCase().includes(value.toLowerCase()),
     );
     setFilteredStores(filtered);
   };
@@ -103,7 +104,7 @@ function ReturnStock() {
 
       if (existingItem) {
         updatedReturnItems = prev.returnItems.map((item) =>
-          item.size === size ? { ...item, ...values } : item
+          item.size === size ? { ...item, ...values } : item,
         );
       } else {
         updatedReturnItems = [...prev.returnItems, { size, ...values }];
@@ -131,7 +132,7 @@ function ReturnStock() {
         null,
         {
           params: { store_key: data.storeKey },
-        }
+        },
       );
       setFetchedReturnedDesigns(response.data.data);
 
@@ -142,7 +143,7 @@ function ReturnStock() {
     } catch (error) {
       console.error(
         "Error removing return item:",
-        error.response?.data || error.message
+        error.response?.data || error.message,
       );
       alert("Failed to remove item.");
     } finally {
@@ -225,7 +226,7 @@ function ReturnStock() {
       } catch (error) {
         console.error(
           `Error adding ${isSalesMode ? "sales" : "return"} item:`,
-          error.response?.data || error.message
+          error.response?.data || error.message,
         );
         setIsAdding(false);
       } finally {
@@ -236,14 +237,14 @@ function ReturnStock() {
     try {
       setLoading(true);
       const response = await axios.get(
-        `http://localhost:8000/view/${newStoreKey}`
+        `http://localhost:8000/view/${newStoreKey}`,
       );
       setFetchedReturnedDesigns(response.data.data); //Store designs from response
       console.log(fetchedReturnedDesigns);
     } catch (error) {
       console.error(
         "Error fetching stock designs:",
-        error.response?.data || error.message
+        error.response?.data || error.message,
       );
       setIsAdding(false);
     } finally {
@@ -276,18 +277,20 @@ function ReturnStock() {
   };
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
     if (fetchedReturnedDesigns.length === 0) {
       alert("Please add designs.");
       return;
     }
 
+    setIsSubmitting(true);
     const action = isSalesMode ? "sales" : "return";
     let flag = 1;
     try {
       setLoading(true);
       const response = await axios.post(
         `http://localhost:8000/submit/${encodeURIComponent(
-          brandName
+          brandName,
         )}/${action}`,
         null,
         {
@@ -295,13 +298,13 @@ function ReturnStock() {
             store_name: data.storeName,
             date: data.date,
           },
-        }
+        },
       );
 
       console.log("Submission Response:", response.data);
       alert(
         response.data.message + ". You will be redirected to the view page." ||
-          "Submission successful!"
+          "Submission successful!",
       );
 
       navigate("/view", {
@@ -315,17 +318,18 @@ function ReturnStock() {
     } catch (error) {
       console.error(
         "Error submitting data:",
-        error.response?.data || error.message
+        error.response?.data || error.message,
       );
       if (error.response?.data?.detail?.includes("1146 (42S02)")) {
         alert(
-          "Shelf hasn't been created for this store. Add stocks to the shelf first."
+          "Shelf hasn't been created for this store. Add stocks to the shelf first.",
         );
         flag = 1;
       } else {
         alert("Failed to submit return details.");
         flag = 0;
       }
+      setIsSubmitting(false);
     } finally {
       setLoading(false);
     }
@@ -354,6 +358,8 @@ function ReturnStock() {
         setReset(false);
       }, 0);
     }
+
+    setIsSubmitting(false);
   };
 
   return (
@@ -451,7 +457,7 @@ function ReturnStock() {
           <button
             className="actionRet submitReturn"
             onClick={handleSubmit}
-            disabled={loading}
+            disabled={isSubmitting || loading}
           >
             Submit
           </button>
