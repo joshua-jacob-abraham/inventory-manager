@@ -36,6 +36,7 @@ function NewStock() {
   const [filteredStores, setFilteredStores] = useState([]);
   const [suggest, setSuggest] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     axios
@@ -59,7 +60,7 @@ function NewStock() {
     }));
 
     const filtered = stores.filter((store) =>
-      store.toLowerCase().includes(value.toLowerCase())
+      store.toLowerCase().includes(value.toLowerCase()),
     );
     setFilteredStores(filtered);
   };
@@ -115,7 +116,7 @@ function NewStock() {
 
       if (existingItem) {
         updatedStockItems = prev.stockItems.map((item) =>
-          item.size === size ? { ...item, ...values } : item
+          item.size === size ? { ...item, ...values } : item,
         );
       } else {
         updatedStockItems = [...prev.stockItems, { size, ...values }];
@@ -152,7 +153,7 @@ function NewStock() {
           params: {
             store_key: data.storeKey,
           },
-        }
+        },
       );
       setFetchedDesigns(res.data.data);
     } catch (err) {
@@ -251,7 +252,7 @@ function NewStock() {
               store_name: data.storeName,
               date: data.date,
             },
-          }
+          },
         );
 
         const { store_key, current_designs } = response.data;
@@ -261,7 +262,7 @@ function NewStock() {
       } catch (error) {
         console.error(
           "Error adding stock item:",
-          error.response?.data || error.message
+          error.response?.data || error.message,
         );
         setIsAdding(false);
       } finally {
@@ -272,13 +273,13 @@ function NewStock() {
     try {
       setLoading(true);
       const response = await axios.get(
-        `http://localhost:8000/view/${newStoreKey}`
+        `http://localhost:8000/view/${newStoreKey}`,
       );
       setFetchedDesigns(response.data.data);
     } catch (error) {
       console.error(
         "Error fetching stock designs:",
-        error.response?.data || error.message
+        error.response?.data || error.message,
       );
       setIsAdding(false);
     } finally {
@@ -313,11 +314,13 @@ function NewStock() {
   };
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
     if (fetchedDesigns.length === 0) {
       alert("Please add designs.");
       return;
     }
 
+    setIsSubmitting(true);
     let submissionSuccessful = false;
     const action = "new";
 
@@ -325,7 +328,7 @@ function NewStock() {
       setLoading(true);
       const response = await axios.post(
         `http://localhost:8000/submit/${encodeURIComponent(
-          brandName
+          brandName,
         )}/${action}`,
         null,
         {
@@ -333,13 +336,13 @@ function NewStock() {
             store_name: data.storeName,
             date: data.date,
           },
-        }
+        },
       );
 
       console.log("Submission Response:", response.data);
       alert(
         response.data.message + ". You will be redirected to the view page." ||
-          "Submission successful!"
+          "Submission successful!",
       );
 
       submissionSuccessful = true;
@@ -355,9 +358,10 @@ function NewStock() {
     } catch (error) {
       console.error(
         "Error submitting data:",
-        error.response?.data || error.message
+        error.response?.data || error.message,
       );
       alert("Failed to submit stock details.");
+      setIsSubmitting(false);
     } finally {
       setLoading(false);
     }
@@ -387,6 +391,8 @@ function NewStock() {
       setTimeout(() => {
         setReset(false);
       }, 0);
+
+      setIsSubmitting(false);
     }
   };
 
@@ -444,7 +450,7 @@ function NewStock() {
           />
 
           <button className="action clearAll" onClick={handleClearAll}>
-            <img className="dustbin" src={dustbin} alt="clearAll"/>
+            <img className="dustbin" src={dustbin} alt="clearAll" />
           </button>
         </div>
 
@@ -483,7 +489,7 @@ function NewStock() {
             <button
               className="action actSubmit"
               onClick={handleSubmit}
-              disabled={loading}
+              disabled={isSubmitting || loading}
             >
               Submit
             </button>
