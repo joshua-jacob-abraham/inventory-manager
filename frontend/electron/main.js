@@ -5,6 +5,7 @@ import fs from "fs";
 import crypto from "crypto";
 import { spawn, exec, execSync } from "child_process";
 import { spawnSync } from "child_process";
+import fetch from "node-fetch";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -50,15 +51,31 @@ function getOrCreateMySQLCredentials() {
   return creds;
 }
 
+function isBootstrapped() {
+  const isProd = app.isPackaged;
+  const userDataPath = isProd
+    ? app.getPath("userData")
+    : path.join(__dirname, "..", "..", "mysql-dev");
+
+  const flagFile = path.join(userDataPath, "mysql", ".bootstrapped");
+  return fs.existsSync(flagFile);
+}
+
 function pollMySQLUntilReady(mysqlBaseDir, port = 3308, timeout = 300000) {
   const mysqlExe = path.join(mysqlBaseDir, "bin", "mysql.exe");
   const start = Date.now();
+
+  let pwd = "";
+  if (isBootstrapped()) {
+    const creds = getOrCreateMySQLCredentials();
+    pwd = creds.password;
+  }
 
   return new Promise((resolve, reject) => {
     const poll = () => {
       try {
         execSync(
-          `"${mysqlExe}" -u root --protocol=tcp --port=${port} -e "SELECT 1;"`,
+          `"${mysqlExe}" -u root ${pwd ? `-p"${pwd}"` : ""} --protocol=tcp --port=${port} -e "SELECT 1;"`,
           { stdio: "ignore" },
         );
         resolve();
@@ -98,8 +115,18 @@ basedir="${basedir}"
 datadir="${datadir}"
 `;
 
-  fs.writeFileSync(mysqlIniPath, iniContent);
+  if (!isBootstrapped) fs.writeFileSync(mysqlIniPath, iniContent);
   return { mysqlIniPath, mysqlDataDir };
+}
+
+function ensureDataDirWritable(mysqlDataDir) {
+  const username = process.env.USERNAME || process.env.USER;
+  try {
+    execSync(`icacls "${mysqlDataDir}" /grant "${username}:(OI)(CI)F" /T`);
+    console.log("MySQL data folder permissions set.");
+  } catch (err) {
+    console.error("Failed to set permissions on MySQL data folder:", err);
+  }
 }
 
 function initializeMySQLIfNeeded(
@@ -129,42 +156,67 @@ function initializeMySQLIfNeeded(
   if (result.status !== 0) {
     throw new Error("MySQL initialization failed");
   }
+
+  ensureDataDirWritable(mysqlDataDir);
 }
 
 function startMySQL() {
-  const isProd = app.isPackaged;
-  const mysqlBaseDir = isProd
-    ? path.join(process.resourcesPath, "mysql")
-    : path.join(__dirname, "mysql");
+  return new Promise((resolve, reject) => {
+    const isProd = app.isPackaged;
+    const mysqlBaseDir = isProd
+      ? path.join(process.resourcesPath, "mysql")
+      : path.join(__dirname, "mysql");
 
-  const mysqlPath = path.join(mysqlBaseDir, "bin", "mysqld.exe");
+    const mysqlPath = path.join(mysqlBaseDir, "bin", "mysqld.exe");
 
-  console.log(`Starting mysql with: "${mysqlPath}"`);
+    console.log(`Starting mysql with: "${mysqlPath}"`);
 
-  const { mysqlIniPath, mysqlDataDir } = prepareMySQLConfig(mysqlBaseDir);
-  initializeMySQLIfNeeded(mysqlPath, mysqlBaseDir, mysqlIniPath, mysqlDataDir);
+    const { mysqlIniPath, mysqlDataDir } = prepareMySQLConfig(mysqlBaseDir);
+    initializeMySQLIfNeeded(
+      mysqlPath,
+      mysqlBaseDir,
+      mysqlIniPath,
+      mysqlDataDir,
+    );
 
-  mysqlProcess = spawn(
-    mysqlPath,
-    [`--defaults-file=${mysqlIniPath}`, "--console"],
-    {
-      cwd: mysqlBaseDir,
-    },
-  );
+    const username = process.env.USERNAME || process.env.USER;
+    try {
+      execSync(`icacls "${mysqlDataDir}" /grant "${username}:(OI)(CI)F" /T`);
+    } catch (err) {
+      console.warn("Failed to set permissions on MySQL data dir:", err);
+    }
 
-  mysqlProcess.stdout.on("data", (data) => {
-    console.log(`MySQL: ${data}`);
-  });
+    mysqlProcess = spawn(
+      mysqlPath,
+      [`--defaults-file=${mysqlIniPath}`, "--console"],
+      {
+        cwd: mysqlBaseDir,
+      },
+    );
 
-  mysqlProcess.stderr.on("data", (data) => {
-    console.error(`MySQL Error: ${data}`);
-  });
+    mysqlProcess.stdout.on("data", (data) => {
+      console.log(`MySQL: ${data}`);
+    });
 
-  mysqlProcess.on("exit", (code) => {
-    console.log(`MySQL process exited with code ${code}`);
+    mysqlProcess.stderr.on("data", (data) => {
+      console.error(`MySQL Error: ${data}`);
+    });
+
+    mysqlProcess.on("exit", (code) => {
+      console.log(`MySQL process exited with code ${code}`);
+      if (code !== 0) {
+        reject(new Error(`MySQL exited with code ${code}`));
+      }
+    });
+
+    pollMySQLUntilReady(mysqlBaseDir)
+      .then(() => {
+        console.log("MySQL ready.");
+        resolve();
+      })
+      .catch(reject);
   });
 }
-
 function setRootPasswordWithRetry(mysqlBaseDir, creds, timeout = 30000) {
   const mysqlExe = path.join(mysqlBaseDir, "bin", "mysql.exe");
 
@@ -180,8 +232,6 @@ ALTER USER 'root'@'localhost'
 IDENTIFIED WITH caching_sha2_password
 BY '${creds.password}';
 `;
-
-  if (fs.existsSync(flagFile)) return;
 
   const start = Date.now();
   while (true) {
@@ -212,6 +262,21 @@ BY '${creds.password}';
       console.log("Trying again.");
       Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 500);
     }
+  }
+}
+
+async function waitForFastAPI(timeout = 30000) {
+  const start = Date.now();
+
+  while (true) {
+    try {
+      const res = await fetch("http://localhost:8000/health/db");
+      if (res.status === 200) return;
+    } catch {}
+    if (Date.now() - start > timeout) {
+      throw new Error("FastAPI did not become ready in time");
+    }
+    await new Promise((r) => setTimeout(r, 500));
   }
 }
 
@@ -246,6 +311,8 @@ function startFastAPI() {
   pythonProcess.on("close", (code) => {
     console.log(`FastAPI process exited with code ${code}`);
   });
+
+  return waitForFastAPI();
 }
 
 function createWindow() {
@@ -296,23 +363,27 @@ function createWindow() {
 }
 
 app.whenReady().then(async () => {
-  startMySQL();
-
   const mysqlBaseDir = app.isPackaged
     ? path.join(process.resourcesPath, "mysql")
     : path.join(__dirname, "mysql");
 
   try {
-    console.log("Waiting for MySQL to be ready for bootstrapping.");
-    await pollMySQLUntilReady(mysqlBaseDir);
+    await startMySQL();
+    console.log("Started MySQL.");
 
-    const creds = getOrCreateMySQLCredentials();
+    if (!isBootstrapped()) {
+      console.log("Bootstrapping.");
+      const creds = getOrCreateMySQLCredentials();
 
-    console.log("Setting root password.");
-    setRootPasswordWithRetry(mysqlBaseDir, creds);
+      console.log("Setting root password.");
+      setRootPasswordWithRetry(mysqlBaseDir, creds);
+    } else {
+      console.log("Already bootstrapped.");
+    }
 
     console.log("Starting FastAPI.");
-    startFastAPI();
+    await startFastAPI();
+    console.log("FastAPI ready.");
 
     createWindow();
   } catch (err) {
