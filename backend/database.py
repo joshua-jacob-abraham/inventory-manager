@@ -1,16 +1,21 @@
 import mysql.connector as ms
+import os	
 from mysql.connector import Error
 
 def get_db_connection(
 		database : str = None
 ) :
-	
+		if not os.getenv("DB_PASSWORD"):
+			raise RuntimeError(
+				"DB_PASSWORD not set. FastAPI must be started by Electron."
+			)
+
 		connection = ms.connect(
-			host = "127.0.0.1",
-			user = 'root',
-			password = 'Lepaku@2027',
-			port=3308 )
-		
+    host=os.getenv("DB_HOST", "127.0.0.1"),
+    user=os.getenv("DB_USER", "root"),
+    password=os.getenv("DB_PASSWORD"),
+    port=int(os.getenv("DB_PORT", "3308")),
+)
 		cursor = connection.cursor()
 
 		if database:
@@ -63,6 +68,7 @@ def get_db_connection(
 						connection.commit()
 
 					except ms.Error as e:
+						cursor.close()
 						connection.close()
 						raise Exception(f"Error creating database: {str(e)}")
 
