@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import Loading from "../components/Loading.jsx";
 import DropDown from "../components/DropDown.jsx";
 import flowerImg from "../assets/flower.avif";
+import dustbin from "../assets/dustbin.svg";
 
 const SelectedReturn = lazy(() => import("../components/SelectedReturn.jsx"));
 
@@ -51,6 +52,19 @@ function ReturnStock() {
       })
       .catch((err) => console.error(err));
   }, []);
+
+  const handleClearAll = async () => {
+    try {
+      await axios.post("http://localhost:8000/clear/temp", null, {
+        params: {
+          store_key: data.storeKey,
+        },
+      });
+      setFetchedReturnedDesigns([]);
+    } catch (err) {
+      console.error("Error clearing temp data:", err);
+    }
+  };
 
   const handleStoreNameInputChange = (e) => {
     const value = e.target.value;
@@ -431,13 +445,20 @@ function ReturnStock() {
           )}
         </div>
 
-        <input
-          type="text"
-          placeholder="Code Base"
-          className="details codeReturn"
-          value={data.designCode}
-          onChange={(e) => setData({ ...data, designCode: e.target.value })}
-        />
+        <div className="container">
+          <input
+            type="text"
+            placeholder="Code Base"
+            className="details codeReturn"
+            value={data.designCode}
+            onChange={(e) => setData({ ...data, designCode: e.target.value })}
+          />
+
+          <button className="actionRet clearAll" onClick={handleClearAll}>
+            <img className="dustbin" src={dustbin} alt="clearAll" />
+          </button>
+        </div>
+
         <input
           type="date"
           className="dateReturn"
@@ -457,46 +478,46 @@ function ReturnStock() {
           ))}
 
           {!addingCustomSize && (
-              <div
-                className="addCustomSize"
-                onClick={() => {
-                  setAddingCustomSize(true);
-                  setTimeout(() => {
-                    inputRef.current?.focus();
-                  }, 0);
-                }}
+            <div
+              className="addCustomSize"
+              onClick={() => {
+                setAddingCustomSize(true);
+                setTimeout(() => {
+                  inputRef.current?.focus();
+                }, 0);
+              }}
+            >
+              <p style={{ padding: 0, margin: 0, cursor: "pointer" }}>+</p>
+            </div>
+          )}
+
+          {addingCustomSize && (
+            <div className="customSizeInputContainer">
+              <div className="customSizeInputDeco"></div>
+
+              <div className="customSizeInputDiv">
+                <input
+                  className="customSizeInput"
+                  type="text"
+                  ref={inputRef}
+                  placeholder="Size"
+                  value={newSizeInput}
+                  onChange={(e) => setNewSizeInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleAddCustomSize();
+                    if (e.key === "Escape") setAddingCustomSize(false);
+                  }}
+                />
+              </div>
+
+              <button
+                className="customSizeInputAddButton"
+                onClick={handleAddCustomSize}
               >
-                <p style={{ padding: 0, margin: 0, cursor: "pointer" }}>+</p>
-              </div>
-            )}
-
-            {addingCustomSize && (
-              <div className="customSizeInputContainer">
-                <div className="customSizeInputDeco"></div>
-
-                <div className="customSizeInputDiv">
-                  <input
-                    className="customSizeInput"
-                    type="text"
-                    ref={inputRef}
-                    placeholder="Size"
-                    value={newSizeInput}
-                    onChange={(e) => setNewSizeInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleAddCustomSize();
-                      if (e.key === "Escape") setAddingCustomSize(false);
-                    }}
-                  />
-                </div>
-
-                <button
-                  className="customSizeInputAddButton"
-                  onClick={handleAddCustomSize}
-                >
-                  +
-                </button>
-              </div>
-            )}
+                +
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="flowerBox">

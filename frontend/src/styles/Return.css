@@ -57,9 +57,24 @@
   grid-row: 1;
 }
 
-.details.codeReturn {
+.details.container {
   grid-column: 1 / span 1; 
   grid-row: 2;
+}
+
+.container {
+  display: flex;
+  flex-direction: row;
+}
+
+.clearAll {
+  width: 40px;
+  border: none;
+  border-radius: 5px;
+}
+
+.details.codeReturn {
+  margin-right: 5px;
 }
 
 .dateReturn {
@@ -107,6 +122,7 @@
   background-color: #FDFCDC;
   cursor: pointer;
 }
+
 
 .actReturn, .actSales{
   border-bottom-right-radius: 5px;
