@@ -9,7 +9,6 @@ import { useNavigate } from "react-router-dom";
 import Loading from "../components/Loading.jsx";
 import DropDown from "../components/DropDown.jsx";
 import flowerImg from "../assets/flower.avif";
-import CircularLoader from "../components/CircularLoader.jsx";
 
 const SelectedReturn = lazy(() => import("../components/SelectedReturn.jsx"));
 

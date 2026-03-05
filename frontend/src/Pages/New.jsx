@@ -1,6 +1,6 @@
 import "../styles/New.css";
 import { useNavigate } from "react-router-dom";
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, useRef } from "react";
 import Heading from "../components/Heading.jsx";
 import Checkbox from "../components/Checkbox.jsx";
 import { Suspense, lazy } from "react";
@@ -31,12 +31,14 @@ function NewStock() {
   };
 
   const { brandName } = useContext(BrandNameContext);
+  const inputRef = useRef(null);
 
   const [stores, setStores] = useState([]);
   const [filteredStores, setFilteredStores] = useState([]);
   const [suggest, setSuggest] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [addingCustomSize, setAddingCustomSize] = useState(false);
 
   useEffect(() => {
     axios
@@ -73,7 +75,30 @@ function NewStock() {
     setFilteredStores([]);
   };
 
-  const sizes = ["12", "14", "16", "18", "20", "22", "24", "26", "28", "30"];
+  const defaultSizes = [
+    "12",
+    "14",
+    "16",
+    "18",
+    "20",
+    "22",
+    "24",
+    "26",
+    "28",
+    "30",
+  ];
+  const [customSizes, setCustomSizes] = useState([]);
+  const sizes = [...new Set([...defaultSizes, ...customSizes])];
+  const [newSizeInput, setNewSizeInput] = useState("");
+
+  const handleAddCustomSize = () => {
+    if (newSizeInput.trim() !== "" && !sizes.includes(newSizeInput)) {
+      setCustomSizes((prev) => [...prev, newSizeInput]);
+      setNewSizeInput("");
+    }
+    setAddingCustomSize(false);
+  };
+
   const [loading, setLoading] = useState(false);
 
   const [data, setData] = useState({
@@ -466,16 +491,59 @@ function NewStock() {
           onChange={(isChecked) => updateGSTForStockItems(isChecked)}
         />
 
-        <div className="thesizes">
-          {sizes.map((size) => (
-            <Checkbox
-              key={size}
-              id={size}
-              label={size == 12 ? `R` : `${size}"`}
-              reset={resetCheck}
-              onChange={handleCheckboxChange}
-            />
-          ))}
+        <div className="sizeAction">
+          <div className="thesizes">
+            {sizes.map((size) => (
+              <Checkbox
+                key={size}
+                id={size}
+                label={size == 12 ? `R` : `${size}"`}
+                reset={resetCheck}
+                onChange={handleCheckboxChange}
+              />
+            ))}
+
+            {!addingCustomSize && (
+              <div
+                className="addCustomSize"
+                onClick={() => {
+                  setAddingCustomSize(true);
+                  setTimeout(() => {
+                    inputRef.current?.focus();
+                  }, 0);
+                }}
+              >
+                <p style={{ padding: 0, margin: 0, cursor: "pointer" }}>+</p>
+              </div>
+            )}
+
+            {addingCustomSize && (
+              <div className="customSizeInputContainer">
+                <div className="customSizeInputDeco"></div>
+
+                <div className="customSizeInputDiv">
+                  <input
+                    className="customSizeInput"
+                    type="text"
+                    ref={inputRef}
+                    placeholder="Size"
+                    value={newSizeInput}
+                    onChange={(e) => setNewSizeInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleAddCustomSize();
+                    }}
+                  />
+                </div>
+
+                <button
+                  className="customSizeInputAddButton"
+                  onClick={handleAddCustomSize}
+                >
+                  +
+                </button>
+              </div>
+            )}
+          </div>
 
           <div className="theaction">
             <button
