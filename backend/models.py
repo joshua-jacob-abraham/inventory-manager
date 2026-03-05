@@ -13,18 +13,7 @@ class StockItem(BaseModel):
     gst_rate: Optional[int] = None
     hsn_code: Optional[str] = "62092000"
     taxable_amount: Optional[float] = None
-    tax_amount: Optional[float] = None
-
-    def calculate_gst(self):
-        if self.price >= 1000:
-            self.gst_rate = 12
-        else:
-            self.gst_rate = 5
-
-    def calculate_tax(self):
-        self.calculate_gst()
-        self.taxable_amount = round(self.price * (100 / (100 + self.gst_rate)), 2)
-        self.tax_amount = round(self.price - self.taxable_amount, 2)     
+    tax_amount: Optional[float] = None    
 
     def to_dict(self):
         return {

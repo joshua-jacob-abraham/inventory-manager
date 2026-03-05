@@ -12,8 +12,8 @@ import { Suspense, lazy } from "react";
 const ViewedItemsTable = React.lazy(() => import("../components/Viewed.jsx"));
 const DropDown = React.lazy(() => import("../components/DropDown.jsx"));
 const Loading = React.lazy(() => import("../components/Loading.jsx"));
-const ViewedRecordsTable = React.lazy(() =>
-  import("../components/ViewedRecordsTable.jsx")
+const ViewedRecordsTable = React.lazy(
+  () => import("../components/ViewedRecordsTable.jsx"),
 );
 
 function ViewStock() {
@@ -52,7 +52,7 @@ function ViewStock() {
     setStoreName(value);
 
     const filtered = stores.filter((store) =>
-      store.toLowerCase().includes(value.toLowerCase())
+      store.toLowerCase().includes(value.toLowerCase()),
     );
     setFilteredStores(filtered);
   };
@@ -70,12 +70,11 @@ function ViewStock() {
   };
 
   useEffect(() => {
-  if (shouldFetchRecord) {
-    handleGet();              
-    setShouldFetchRecord(false);
-  }
-}, [shouldFetchRecord]);
-
+    if (shouldFetchRecord) {
+      handleGet();
+      setShouldFetchRecord(false);
+    }
+  }, [shouldFetchRecord]);
 
   const handleSelectSuggestion = (selectedName) => {
     setStoreName(selectedName);
@@ -103,45 +102,6 @@ function ViewStock() {
     }
   };
 
-  const handlePrintPDF = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.post(
-        `http://localhost:8000/printPDF/${encodeURIComponent(brandName)}`,
-        null,
-        {
-          params: {
-            store_name: storeName,
-            date: fromDate,
-            action: action,
-          },
-          responseType: "blob",
-        }
-      );
-
-      const pdfBlob = new Blob([response.data], { type: "application/pdf" });
-
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-
-      const a = document.createElement("a");
-      a.href = pdfUrl;
-      a.download = `${storeName}_${fromDate}_${action}_stock.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(pdfUrl);
-    } catch (error) {
-      console.error(
-        "Error printing as pdf:",
-        error.response?.data || error.message
-      );
-      setLoading(false);
-      alert("Failed to save pdf.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handlePrintExcel = async () => {
     try {
       setLoading(true);
@@ -155,7 +115,7 @@ function ViewStock() {
             action: action,
           },
           responseType: "blob",
-        }
+        },
       );
 
       const excelBlob = new Blob([response.data], {
@@ -174,7 +134,7 @@ function ViewStock() {
     } catch (error) {
       console.error(
         "Error exporting to Excel:",
-        error.response?.data || error.message
+        error.response?.data || error.message,
       );
       setLoading(false);
       alert("Failed to save Excel file.");
@@ -189,8 +149,8 @@ function ViewStock() {
         setLoading(true);
         const response = await axios.get(
           `http://localhost:8000/shelf/${encodeURIComponent(
-            brandName
-          )}/${encodeURIComponent(storeName)}`
+            brandName,
+          )}/${encodeURIComponent(storeName)}`,
         );
 
         setRetrievedData(response.data.data);
@@ -202,7 +162,7 @@ function ViewStock() {
       } catch (error) {
         console.error(
           "Error viewing shelf:",
-          error.response?.data || error.message
+          error.response?.data || error.message,
         );
         setLoading(false);
         alert("Failed to view shelf.");
@@ -216,8 +176,8 @@ function ViewStock() {
         if (fromDate === toDate) {
           const response = await axios.get(
             `http://localhost:8000/view_action/${encodeURIComponent(
-              brandName
-            )}/${encodeURIComponent(storeName)}/${fromDate}/${action}`
+              brandName,
+            )}/${encodeURIComponent(storeName)}/${fromDate}/${action}`,
           );
           setRetrievedData(response.data.data);
           setIsRangeView(false);
@@ -238,7 +198,7 @@ function ViewStock() {
                 store_name: storeName || undefined,
                 action: action || undefined,
               },
-            }
+            },
           );
           setRetrievedData(response.data.data);
           setIsRangeView(true);
@@ -252,7 +212,7 @@ function ViewStock() {
       } catch (error) {
         console.error(
           "Error viewing the data:",
-          error.response?.data || error.message
+          error.response?.data || error.message,
         );
         setLoading(false);
         alert("Failed to view the data.");
@@ -339,13 +299,6 @@ function ViewStock() {
 
         <button className="get" onClick={handleGet}>
           GET
-        </button>
-        <button
-          className="printPDF"
-          onClick={handlePrintPDF}
-          disabled={isDisabled}
-        >
-          Save as PDF
         </button>
         <button
           className="printExcel"

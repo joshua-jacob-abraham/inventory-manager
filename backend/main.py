@@ -4,7 +4,7 @@ import mysql.connector as ms
 from fastapi.middleware.cors import CORSMiddleware
 from crud import insert_into_records
 from models import StockItem,ReturnedItem
-from services import add_to_stores, clear_temp_data, get_code_details, is_valid_name, lookupRange, make_valid_table_name, reverse_table_name, submit_new_stock,add_design_temp,temp_stock_data,from_shelf,lookup,add_design_temp_return,submit_returned_stock,remove_from_temp,generate_pdf_bytes,lookupforprint,submit_sales_stock
+from services import add_to_stores, clear_temp_data, get_code_details, is_valid_name, lookupRange, make_valid_table_name, reverse_table_name, submit_new_stock,add_design_temp,temp_stock_data,from_shelf,lookup,add_design_temp_return,submit_returned_stock,remove_from_temp,lookupforprint,submit_sales_stock
 from database import get_db_connection
 from datetime import datetime
 from openpyxl.styles import Font, Alignment
@@ -364,35 +364,6 @@ async def clearTemp(store_key: str = Query(...)):
         "message": f"Cleared temp data for store '{store_key}'.",
         "data": temp_data,
     }
-
-#print table
-@app.post("/printPDF/{brand_name}")
-async def print_pdf(
-	brand_name : str,
-	store_name : str = Query(...),
-	date : str = Query(...),
-	action : str = Query(...)
-	):
-	
-	store_name = make_valid_table_name(store_name)
-	brand_name = make_valid_table_name(brand_name)
-
-	date_obj = datetime.strptime(date,"%Y-%m-%d")
-	formatted_date = date_obj.strftime("%d_%b_%Y")
-
-	connection = get_db_connection(brand_name)
-
-	stock_data = lookupforprint(store_name,date,action,connection)
-	if stock_data is None or not stock_data:
-		raise HTTPException(status_code=404, detail="No stock data found for the specified parameters.")
-
-	pdf_bytes = generate_pdf_bytes(brand_name,store_name, date, action, stock_data)
-
-	return StreamingResponse(
-			io.BytesIO(pdf_bytes),
-			media_type="application/pdf",
-			headers={"Content-Disposition": f"attachment; filename={store_name}_{formatted_date}_{action}_stock.pdf"}
-	)
 
 #print excel
 @app.post("/printExcel/{brand_name}")
