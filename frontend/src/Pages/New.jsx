@@ -533,6 +533,7 @@ function NewStock() {
                     onChange={(e) => setNewSizeInput(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") handleAddCustomSize();
+                      if (e.key === "Escape") setAddingCustomSize(false);
                     }}
                   />
                 </div>

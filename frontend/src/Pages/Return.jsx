@@ -2,7 +2,7 @@ import "../styles/Return.css";
 import Heading from "../components/Heading.jsx";
 import CheckboxSize from "../components/CheckboxSize.jsx";
 import React, { useState, useContext, useEffect } from "react";
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useRef } from "react";
 import { BrandNameContext } from "../contexts/BrandNameContext.jsx";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -29,11 +29,14 @@ function ReturnStock() {
     }
   };
 
+  const inputRef = useRef(null);
+
   const [stores, setStores] = useState([]);
   const [filteredStores, setFilteredStores] = useState([]);
   const [suggest, setSuggest] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [addingCustomSize, setAddingCustomSize] = useState(false);
 
   useEffect(() => {
     axios
@@ -71,8 +74,33 @@ function ReturnStock() {
   };
 
   const { brandName } = useContext(BrandNameContext);
-  const sizes = ["12", "14", "16", "18", "20", "22", "24", "26", "28", "30"];
   const [loading, setLoading] = useState(false);
+
+  const defaultSizes = [
+    "12",
+    "14",
+    "16",
+    "18",
+    "20",
+    "22",
+    "24",
+    "26",
+    "28",
+    "30",
+  ];
+  const [customSizes, setCustomSizes] = useState([]);
+  const sizes = [...new Set([...defaultSizes, ...customSizes])];
+  const [newSizeInput, setNewSizeInput] = useState("");
+
+  const handleAddCustomSize = () => {
+    const size = parseInt(newSizeInput.trim(), 10);
+
+    if (!isNaN(size) && !customSizes.includes(size.toString())) {
+      setCustomSizes((prev) => [...prev, size.toString()]);
+    }
+    setNewSizeInput("");
+    setAddingCustomSize(false);
+  };
 
   const [data, setData] = useState({
     storeName: "",
@@ -133,6 +161,7 @@ function ReturnStock() {
           params: { store_key: data.storeKey },
         },
       );
+      console.log(response.data.data);
       setFetchedReturnedDesigns(response.data.data);
 
       setData((prev) => ({
@@ -195,8 +224,8 @@ function ReturnStock() {
     for (let item of validReturnItems) {
       const completeDesignCode =
         item.size == 12
-          ? `${data.designCode}R`
-          : `${data.designCode}${item.size}`;
+          ? `${data.designCode}-R`
+          : `${data.designCode}-${item.size}`;
       const payload = {
         design_code: completeDesignCode,
         size: item.size == 12 ? "R" : item.size,
@@ -426,6 +455,48 @@ function ReturnStock() {
               onChange={handleCheckboxChange}
             />
           ))}
+
+          {!addingCustomSize && (
+              <div
+                className="addCustomSize"
+                onClick={() => {
+                  setAddingCustomSize(true);
+                  setTimeout(() => {
+                    inputRef.current?.focus();
+                  }, 0);
+                }}
+              >
+                <p style={{ padding: 0, margin: 0, cursor: "pointer" }}>+</p>
+              </div>
+            )}
+
+            {addingCustomSize && (
+              <div className="customSizeInputContainer">
+                <div className="customSizeInputDeco"></div>
+
+                <div className="customSizeInputDiv">
+                  <input
+                    className="customSizeInput"
+                    type="text"
+                    ref={inputRef}
+                    placeholder="Size"
+                    value={newSizeInput}
+                    onChange={(e) => setNewSizeInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleAddCustomSize();
+                      if (e.key === "Escape") setAddingCustomSize(false);
+                    }}
+                  />
+                </div>
+
+                <button
+                  className="customSizeInputAddButton"
+                  onClick={handleAddCustomSize}
+                >
+                  +
+                </button>
+              </div>
+            )}
         </div>
 
         <div className="flowerBox">
