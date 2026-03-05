@@ -92,10 +92,12 @@ function NewStock() {
   const [newSizeInput, setNewSizeInput] = useState("");
 
   const handleAddCustomSize = () => {
-    if (newSizeInput.trim() !== "" && !sizes.includes(newSizeInput)) {
-      setCustomSizes((prev) => [...prev, newSizeInput]);
-      setNewSizeInput("");
+    const size = parseInt(newSizeInput.trim(), 10);
+
+    if (!isNaN(size) && !customSizes.includes(size.toString())) {
+      setCustomSizes((prev) => [...prev, size.toString()]);
     }
+    setNewSizeInput("");
     setAddingCustomSize(false);
   };
 
