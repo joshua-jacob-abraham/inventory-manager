@@ -8,7 +8,7 @@
   display: grid;
   gap: 5px;
   grid-template-columns: repeat(5, 1fr);
-  grid-template-rows: repeat(11, minmax(40px, auto));
+  grid-template-rows: repeat(11, minmax(40px, 40px));
   padding: 10px;
 }
 
@@ -31,25 +31,28 @@
 }
 
 .date,
-.details {
+.details,
+.customField {
   padding: 8px 12px;
   font-size: 14px;
   border: none;
   color: rgb(27, 27, 27);
 }
 
-.details {
+.details,
+.customField {
   padding: 8px 12px;
   font-size: 14px;
   border-radius: 5px;
 }
 
-.details:focus {
+.details:focus,
+.customField {
   outline: none;
 }
 
 .details.store {
-  grid-column: span 2;
+  grid-column: span 1;
   grid-row: 1;
 }
 
@@ -72,13 +75,19 @@
   flex-direction: row;
 }
 
-.date {
+.dateCustomField {
   grid-column: 3;
   grid-row: 2;
+  display: flex;
+}
+
+.date {
   border-radius: 5px;
   color: rgb(117, 117, 117);
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 14px;
+  font-size: 13px;
+  flex: 1;
+  margin-right: 5px;
 }
 
 .date:focus {
@@ -147,18 +156,22 @@
 
 .selectedItems {
   grid-column: 1 / span 3;
-  grid-row: 3 / span 9;
-  min-height: 392px;
-  max-height: 390px;
+  max-height: 400px;
 }
 
-.clearAll {
+.clearAll,
+.addCustomFieldButton {
   width: 40px;
   border: none;
   border-radius: 5px;
 }
 
-.details {
+.addCustomFieldButton {
+  max-width: 40px;
+}
+
+.details,
+.customField {
   font-size: small;
 }
 
@@ -189,7 +202,7 @@
   border-radius: 5px;
 }
 
-.customSizeInputDeco {
+.customSizeInputDeco, .customFieldInputDeco {
   flex: 5;
   background-color: white;
   margin-right: 5px;
@@ -221,6 +234,10 @@
   outline: none;
 }
 
+.customFieldInput {
+  width: 90%;
+}
+
 .customSizeInputAddButton {
   flex: 0.5;
   border: none;
@@ -232,4 +249,22 @@
   color: rgba(128, 128, 128, 0.753);
   font-family: Arial, Helvetica, sans-serif;
   font-weight: lighter;
+}
+
+.customFieldInputAddButton {
+  flex: 0.25;
+}
+
+.addCustomFieldButton:hover,
+.clearAll:hover {
+  background-color: #f1f0d1;
+}
+
+.action:hover {
+  background-color: #f1f0d1;
+}
+
+.customFieldInputDeco {
+  margin-right: 0px;
+  border-radius: 5px;
 }

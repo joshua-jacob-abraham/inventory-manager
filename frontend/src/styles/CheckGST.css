@@ -148,5 +148,8 @@
 
 .checkGST .checkLabel{
   color: rgb(98, 98, 98);
-  font-size: 16px;
+  font-size: 13px;
+  font-weight: lighter;
+  font-family: Arial, Helvetica, sans-serif;
 }
+

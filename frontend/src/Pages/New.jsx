@@ -10,6 +10,7 @@ import { BrandNameContext } from "../contexts/BrandNameContext.jsx";
 import Loading from "../components/Loading.jsx";
 import DropDown from "../components/DropDown.jsx";
 import dustbin from "../assets/dustbin.svg";
+import plus from "../assets/plus.svg";
 
 const SelectedItemsTable = lazy(() => import("../components/Selected.jsx"));
 
@@ -32,6 +33,7 @@ function NewStock() {
 
   const { brandName } = useContext(BrandNameContext);
   const inputRef = useRef(null);
+  const inputFieldRef = useRef(null);
 
   const [stores, setStores] = useState([]);
   const [filteredStores, setFilteredStores] = useState([]);
@@ -90,6 +92,7 @@ function NewStock() {
   const [customSizes, setCustomSizes] = useState([]);
   const sizes = [...new Set([...defaultSizes, ...customSizes])];
   const [newSizeInput, setNewSizeInput] = useState("");
+  const [newFieldInput, setNewFieldInput] = useState("");
 
   const handleAddCustomSize = () => {
     const size = parseInt(newSizeInput.trim(), 10);
@@ -99,6 +102,28 @@ function NewStock() {
     }
     setNewSizeInput("");
     setAddingCustomSize(false);
+  };
+
+  const handleAddCustomField = () => {
+    const value = newFieldInput.trim();
+    const formatted = value.charAt(0).toUpperCase() + value.slice(1);
+
+    if (
+      formatted !== "" &&
+      !customFields.some(
+        (field) => field.name.toLowerCase() === formatted.toLowerCase(),
+      )
+    ) {
+      setCustomFields((prev) => [...prev, { name: formatted, value: "" }]);
+    }
+    setNewFieldInput("");
+    setAddingCustomField(false);
+  };
+
+  const handleCustomFieldChange = (index, value) => {
+    setCustomFields((prev) =>
+      prev.map((field, i) => (i === index ? { ...field, value } : field)),
+    );
   };
 
   const [loading, setLoading] = useState(false);
@@ -113,6 +138,14 @@ function NewStock() {
     current_designs: [],
     gstApplicable: false,
   });
+
+  const [addingCustomField, setAddingCustomField] = useState(false);
+  const showAddCustomFieldInput = () => {
+    setAddingCustomField(true);
+    setTimeout(() => {
+      inputFieldRef.current?.focus();
+    }, 0);
+  };
 
   const [resetCheck, setReset] = useState(false);
 
@@ -423,6 +456,15 @@ function NewStock() {
     setIsSubmitting(false);
   };
 
+  const [customFields, setCustomFields] = useState([]);
+
+  const baseRow = 3;
+  const visibleFields = customFields.length + (addingCustomField ? 1 : 0);
+  const change = Math.ceil(visibleFields / 3);
+  const tableRowStart = baseRow + change;
+
+  const isShowable = (visibleFields) % 3 != 0;
+
   return (
     <div className="dashboard">
       <Heading
@@ -481,12 +523,21 @@ function NewStock() {
           </button>
         </div>
 
-        <input
-          type="date"
-          className="date"
-          value={data.date}
-          onChange={(e) => setData({ ...data, date: e.target.value })}
-        />
+        <div className="dateCustomField">
+          <input
+            type="date"
+            className="date"
+            value={data.date}
+            onChange={(e) => setData({ ...data, date: e.target.value })}
+          />
+
+          <button
+            className="action addCustomFieldButton"
+            onClick={showAddCustomFieldInput}
+          >
+            <img className="plus" src={plus} alt="addCustomField" />
+          </button>
+        </div>
 
         <CheckGST
           checked={data.gstApplicable}
@@ -567,7 +618,60 @@ function NewStock() {
           </div>
         </div>
 
-        <div className="selectedItems">
+        {/* Sanitize field to remove spaces when using later */}
+        {customFields.map((field, i) => (
+          <input
+            key={field.name}
+            className="customField"
+            placeholder={field.name}
+            value={field.value}
+            onChange={(e) => handleCustomFieldChange(i, e.target.value)}
+          />
+        ))}
+
+        {addingCustomField && (
+          <div className="customSizeInputContainer">
+            <div className="customSizeInputDiv">
+              <input
+                className="customSizeInput customFieldInput"
+                type="text"
+                ref={inputFieldRef}
+                placeholder="New Field"
+                value={newFieldInput}
+                onChange={(e) => setNewFieldInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleAddCustomField();
+                  if (e.key === "Escape") {
+                    setNewFieldInput("");
+                    setAddingCustomField(false);
+                  }
+                }}
+              />
+            </div>
+
+            <button
+              className="customSizeInputAddButton customFieldInputAddButton"
+              onClick={handleAddCustomField}
+            >
+              +
+            </button>
+          </div>
+        )}
+
+        {isShowable && (
+          <div
+            className="customFieldInputDeco"
+            style={{
+              gridRow: `${tableRowStart - 1}`,
+              gridColumn: `${((visibleFields % 3) + 1)} / span ${3 - (visibleFields % 3)}`,
+            }}
+          ></div>
+        )}
+
+        <div
+          className="selectedItems"
+          style={{ gridRow: `${tableRowStart} / span ${9 - change}` }}
+        >
           <Suspense fallback={null}>
             <SelectedItemsTable
               data={fetchedDesigns}
