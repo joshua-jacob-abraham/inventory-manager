@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { Suspense, lazy } from "react";
+import excelMenu from "../assets/excelMenu.svg";
 
 const ViewedItemsTable = React.lazy(() => import("../components/Viewed.jsx"));
 const DropDown = React.lazy(() => import("../components/DropDown.jsx"));
@@ -300,13 +301,20 @@ function ViewStock() {
         <button className="get" onClick={handleGet}>
           GET
         </button>
-        <button
-          className="printExcel"
-          onClick={handlePrintExcel}
-          disabled={isDisabled}
-        >
-          Save as Excel
-        </button>
+
+        <div className="excelOps">
+          <button
+            className="printExcel"
+            onClick={handlePrintExcel}
+            disabled={isDisabled}
+          >
+            Save as Excel
+          </button>
+
+          <button className="action">
+            <img className="excelMenu" src={excelMenu} alt="excelMenu" />
+          </button>
+        </div>
 
         <div className="viewedItems">
           {isRangeView ? (
