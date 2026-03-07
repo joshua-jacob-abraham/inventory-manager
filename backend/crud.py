@@ -1,3 +1,5 @@
+import json
+
 from models import StockItem,ReturnedItem
 
 def create_table(cursor,table_name : str):
@@ -7,18 +9,26 @@ def create_table(cursor,table_name : str):
             ITEM VARCHAR(20), 
             DESIGN_CODE VARCHAR(20), 
             SP_PER_ITEM INT, GST_RATE INT,
-            HSNCODE VARCHAR(10) DEFAULT '62092000', TAXABLE_AMOUNT_PER_ITEM FLOAT, TAX_AMOUNT_PER_ITEM FLOAT,
+            HSNCODE VARCHAR(10) DEFAULT '62092000',
+            TAXABLE_AMOUNT_PER_ITEM FLOAT, 
+            TAX_AMOUNT_PER_ITEM FLOAT,
             QTY INT, SIZE VARCHAR(4),
+            CUSTOM_FIELDS JSON,
+
             PRIMARY KEY(item,design_code,sp_per_item,gst_rate,taxable_amount_per_item,tax_amount_per_item,qty,size)
         )
         """
     )
     
 def insert_item(cursor,table_name : str, stock_item : StockItem):
-	cursor.execute(
+    custom_fields = None
+    if stock_item.custom_fields:
+        custom_fields = json.dumps(stock_item.custom_fields)
+	
+    cursor.execute(
         f"""
-        INSERT INTO {table_name} (item,design_code, sp_per_item, gst_rate, hsncode, taxable_amount_per_item, tax_amount_per_item, qty, size)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO {table_name} (item,design_code, sp_per_item, gst_rate, hsncode, taxable_amount_per_item, tax_amount_per_item, qty, size, custom_fields)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """,
         (
             stock_item.item,
@@ -29,7 +39,8 @@ def insert_item(cursor,table_name : str, stock_item : StockItem):
             stock_item.taxable_amount,
             stock_item.tax_amount,
             stock_item.quantity,
-            stock_item.size
+            stock_item.size,
+            custom_fields
         ),
 	)
 

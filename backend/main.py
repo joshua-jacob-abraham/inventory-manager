@@ -1,10 +1,12 @@
+import json
+
 from fastapi import FastAPI,HTTPException,Query
 from fastapi.responses import FileResponse
 import mysql.connector as ms
 from fastapi.middleware.cors import CORSMiddleware
 from crud import insert_into_records
 from models import StockItem,ReturnedItem
-from services import add_to_stores, clear_temp_data, get_code_details, is_valid_name, lookupRange, make_valid_table_name, reverse_table_name, submit_new_stock,add_design_temp,temp_stock_data,from_shelf,lookup,add_design_temp_return,submit_returned_stock,remove_from_temp,lookupforprint,submit_sales_stock
+from services import add_to_stores, clear_temp_data, get_code_details, is_valid_name, lookupRange, make_valid_table_name, reverse_table_name, set_custom_field_definitions, submit_new_stock,add_design_temp,temp_stock_data,from_shelf,lookup,add_design_temp_return,submit_returned_stock,remove_from_temp,lookupforprint,submit_sales_stock, safe_identifier
 from database import get_db_connection
 from datetime import datetime
 from openpyxl.styles import Font, Alignment
@@ -35,6 +37,36 @@ async def check_db_health():
 	except Exception as e:
 		return JSONResponse(status_code=500, content={"mysql": "down", "error": str(e)})
 	
+#get custom fields set previous time
+@app.get("/custom/{brand_name}/{store_name}")
+async def getCustomFields(brand_name : str, store_name : str):
+	store_name = safe_identifier(make_valid_table_name(store_name))
+	brand_name = safe_identifier(make_valid_table_name(brand_name))
+
+	try:
+		connection = get_db_connection(brand_name)
+		cursor = connection.cursor()
+
+		cursor.execute("""SELECT custom_field_definitions FROM stores WHERE store_name = %s""", (store_name,))
+
+		result = cursor.fetchone()
+		if not result: 
+			return {"fields": []}
+
+		if result and result[0]:
+			fields = json.loads(result[0])
+		else:
+			fields = []
+
+		cursor.close()
+		connection.close()	
+
+		return {"fields": fields}
+
+	except Exception as e:
+		raise HTTPException(status_code=400, detail=str(e))	
+
+
 #rename brandname
 @app.post("/alter/brandname")
 async def alterName(
@@ -131,7 +163,7 @@ async def add_stock_item(
 	date_obj = datetime.strptime(date, "%Y-%m-%d")
 	formatted_date = date_obj.strftime("%d_%b_%Y")
 
-	store_name = make_valid_table_name(store_name)
+	store_name = safe_identifier(make_valid_table_name(store_name))
 	store_key = f"{store_name}_{formatted_date}_new_stock"
 
 	try:
@@ -155,7 +187,7 @@ async def add_returned_item(
 	date_obj = datetime.strptime(date, "%Y-%m-%d")
 	formatted_date = date_obj.strftime("%d_%b_%Y")
 	
-	store_name = make_valid_table_name(store_name)
+	store_name = safe_identifier(make_valid_table_name(store_name))
 	store_key = f"{store_name}_{formatted_date}_return_stock"
 
 	try:
@@ -180,7 +212,7 @@ async def add_sales_item(
 	date_obj = datetime.strptime(date, "%Y-%m-%d")
 	formatted_date = date_obj.strftime("%d_%b_%Y")
 	
-	store_name = make_valid_table_name(store_name)
+	store_name = safe_identifier(make_valid_table_name(store_name))
 	store_key = f"{store_name}_{formatted_date}_sales_stock"
 
 	try:
@@ -201,12 +233,11 @@ async def view_stock(store_key: str):
     
     return {"message": "Temporary stock items", "data": temp_stock_data[store_key]}	
 
-
 #view shelf
 @app.get("/shelf/{brand_name}/{store_name}")
 async def view_shelf(brand_name : str, store_name : str):
-	store_name = make_valid_table_name(store_name)
-	brand_name = make_valid_table_name(brand_name)
+	store_name = safe_identifier(make_valid_table_name(store_name))
+	brand_name = safe_identifier(make_valid_table_name(brand_name))
 
 	try:
 		connection = get_db_connection(brand_name)
@@ -249,8 +280,8 @@ async def view_code(brand_name: str, design_code: str):
 #view action on a date
 @app.get("/view_action/{brand_name}/{store_name}/{date}/{action}")
 async def view_action(brand_name : str,store_name : str, date: str, action : str):
-	store_name = make_valid_table_name(store_name)
-	brand_name = make_valid_table_name(brand_name)
+	store_name = safe_identifier(make_valid_table_name(store_name))
+	brand_name = safe_identifier(make_valid_table_name(brand_name))
 
 	try:
 		connection = get_db_connection(brand_name)
@@ -274,7 +305,7 @@ async def view_range(
     store_name: Optional[str] = Query(None),
     action: Optional[str] = Query(None)
 ):
-    brand_name = make_valid_table_name(brand_name)
+    brand_name = safe_identifier(make_valid_table_name(brand_name))
 
     try:
         connection = get_db_connection(brand_name)
@@ -303,17 +334,18 @@ async def submition_handler(
 	date : str = Query(...)
 	):
 
-	brand_name = make_valid_table_name(brand_name)
-	store_name = make_valid_table_name(store_name)
+	brand_name = safe_identifier(make_valid_table_name(brand_name))
+	store_name = safe_identifier(make_valid_table_name(store_name))
 
 	date_obj = datetime.strptime(date, "%Y-%m-%d")
 	formatted_date = date_obj.strftime("%d_%b_%Y")
 	
-	store_key = f"{store_name}_{formatted_date}_{action}"
 	table_name = f"{store_name}_{formatted_date}_{action}"
 
 	try:
 		connection = get_db_connection(brand_name)
+		add_to_stores(store_name,connection)
+		
 		cursor = connection.cursor()
 		insert_into_records(cursor,reverse_table_name(store_name),action,date)
 		connection.commit()
@@ -330,9 +362,7 @@ async def submition_handler(
 		elif action == "sales":
 			store_key = f"{store_name}_{formatted_date}_sales_stock"
 			table_name = f"{store_name}_{formatted_date}_sales_stock"
-			submit_sales_stock(store_name, store_key,table_name,formatted_date,connection)
-
-		add_to_stores(store_name,connection)
+			submit_sales_stock(store_name, store_key,table_name,formatted_date,connection)	
 
 		connection.close()
 
@@ -376,8 +406,8 @@ async def print_table_excel(
 	date_obj = datetime.strptime(date, "%Y-%m-%d")
 	formatted_date = date_obj.strftime("%d_%b_%Y")
 
-	brand_name = make_valid_table_name(brand_name)
-	store_name = make_valid_table_name(store_name)
+	brand_name = safe_identifier(make_valid_table_name(brand_name))
+	store_name = safe_identifier(make_valid_table_name(store_name))
 
 	connection = get_db_connection(brand_name)
 

@@ -13,6 +13,11 @@ import re
 
 temp_stock_data = {}
 
+def safe_identifier(value):
+    if not re.match(r'^[a-zA-Z0-9_]+$', value):
+        raise ValueError("Invalid identifier")
+    return value
+
 def is_valid_name(name: str) -> bool:
     return bool(re.match(r'^[a-zA-Z0-9_]+$', name))
 
@@ -40,6 +45,23 @@ def add_design_temp(store_key : str, stock_item : StockItem):
     temp_stock_data[store_key].append(stock_item)
     return temp_stock_data[store_key]
 
+def set_custom_field_definitions(store_name:str, store_key : str, connection):
+    cursor = connection.cursor()
+    custom_fields_def = temp_stock_data[store_key][0].custom_fields.keys()
+    custom_fields_def = list(custom_fields_def)
+    
+    cursor.execute(
+        """
+        UPDATE stores
+        SET custom_field_definitions = %s
+        WHERE store_name = %s
+        """,
+        (json.dumps(custom_fields_def), store_name)
+    )
+
+    connection.commit()
+    cursor.close()
+
 def submit_new_stock(store_name : str, store_key: str, table_name: str, connection):
     store_name = make_valid_table_name(store_name)
     table_name = make_valid_table_name(table_name)
@@ -48,7 +70,6 @@ def submit_new_stock(store_name : str, store_key: str, table_name: str, connecti
         raise ValueError("No designs to submit.")
 
     cursor = connection.cursor()
-
     cursor.execute(f"SHOW TABLES LIKE '{table_name}'")
     table_exists = cursor.fetchone()
 
@@ -60,10 +81,11 @@ def submit_new_stock(store_name : str, store_key: str, table_name: str, connecti
 
     connection.commit()
     cursor.close()
-    
+
     update_store(store_name,store_key,True,connection)
     update_dress_stock(store_name, temp_stock_data[store_key], connection, is_add=True)
     
+    set_custom_field_definitions(store_name, store_key, connection)	
     del temp_stock_data[store_key]
 
 def update_dress_stock(store_name: str, stock_items: list, connection, is_add: bool):

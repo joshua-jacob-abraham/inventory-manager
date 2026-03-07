@@ -50,7 +50,8 @@ def get_db_connection(
 						cursor.execute("""
 								CREATE TABLE IF NOT EXISTS stores (
 										store_id INT PRIMARY KEY AUTO_INCREMENT,
-										store_name VARCHAR(100) UNIQUE NOT NULL
+										store_name VARCHAR(100) UNIQUE NOT NULL,
+					 					custom_field_definitions JSON DEFAULT ('[]')
 								);
 						""")
 

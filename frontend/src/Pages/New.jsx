@@ -66,7 +66,14 @@ function NewStock() {
     const filtered = stores.filter((store) =>
       store.toLowerCase().includes(value.toLowerCase()),
     );
-    setFilteredStores(filtered);
+    if (
+      filtered.length === 1 &&
+      filtered[0].toLowerCase() === value.toLowerCase()
+    ) {
+      setFilteredStores([]);
+    } else {
+      setFilteredStores(filtered);
+    }
   };
 
   const handleSelectSuggestion = (selectedName) => {
@@ -75,6 +82,9 @@ function NewStock() {
       storeName: selectedName,
     }));
     setFilteredStores([]);
+    setSuggest(false);
+
+    handleStoreBlur(selectedName);
   };
 
   const defaultSizes = [
@@ -363,6 +373,13 @@ function NewStock() {
       gstApplicable: data.gstApplicable,
     });
 
+    setCustomFields((prev) =>
+      prev.map((field) => ({
+        ...field,
+        value: "",
+      })),
+    );
+
     document
       .querySelectorAll('.box .checkbox-wrapper-52 input[type="checkbox"]')
       .forEach((checkbox) => {
@@ -445,6 +462,7 @@ function NewStock() {
       });
 
       setFetchedDesigns([]);
+      setCustomFields([]);
 
       document
         .querySelectorAll('.box .checkbox-wrapper-52 input[type="checkbox"]')
@@ -471,6 +489,29 @@ function NewStock() {
 
   const isShowable = visibleFields % 3 != 0;
 
+  const handleStoreBlur = async (e) => {
+    const storeNameToUse = (
+      typeof e === "string" ? e : (e?.target?.value ?? data.storeName ?? "")
+    ).trim();
+
+    if (!storeNameToUse.trim()) return;
+    try {
+      const res = await axios.get(
+        `http://localhost:8000/custom/${brandName}/${encodeURIComponent(storeNameToUse)}`,
+      );
+
+      if (res.data.fields) {
+        const formatted = res.data.fields.map((field) => ({
+          name: field,
+          value: "",
+        }));
+        setCustomFields(formatted);
+      }
+    } catch (err) {
+      console.error("Error fetching store fields", err);
+    }
+  };
+
   return (
     <div className="dashboard">
       <Heading
@@ -496,6 +537,10 @@ function NewStock() {
             value={data.storeName}
             onChange={handleStoreNameInputChange}
             onFocus={() => setSuggest(true)}
+            onBlur={handleStoreBlur}
+            onKeyDown={(e) => {
+              if(e.key === "Enter") handleStoreBlur(e);
+            }}
           />
 
           {suggest && data.storeName.trim() !== "" && (
@@ -629,7 +674,7 @@ function NewStock() {
           <input
             key={field.name}
             className="customField"
-            placeholder={field.name}
+            placeholder={`${field.name[0].toUpperCase()}${field.name.slice(1)}`}
             value={field.value}
             onChange={(e) => handleCustomFieldChange(i, e.target.value)}
           />

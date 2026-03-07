@@ -183,6 +183,7 @@
   border: 1px solid #fdfcdceb;
   border-radius: 5px;
   border-style: dashed;
+  margin-bottom: 1px;
 
   transition: background-color 0.2s ease-in-out;
 }

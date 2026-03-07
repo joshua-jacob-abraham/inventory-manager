@@ -115,7 +115,10 @@ basedir="${basedir}"
 datadir="${datadir}"
 `;
 
-  if (!isBootstrapped) fs.writeFileSync(mysqlIniPath, iniContent);
+  if (!isBootstrapped()) {
+    fs.writeFileSync(mysqlIniPath, iniContent);
+    console.log("Writing MySQL config:", mysqlIniPath);
+  }
   return { mysqlIniPath, mysqlDataDir };
 }
 
@@ -392,30 +395,72 @@ app.whenReady().then(async () => {
   }
 });
 
-app.on("window-all-closed", () => {
-  if (mysqlProcess) {
-    console.log("Stopping MySQL...");
-    exec(`taskkill /pid ${mysqlProcess.pid} /f /t`, (error, stdout, stderr) => {
-      if (error) console.error(`Error stopping MySQL: ${error}`);
-      if (stderr) console.error(`MySQL Shutdown Error: ${stderr}`);
-      if (stdout) console.log(`MySQL Shutdown: ${stdout}`);
+function killProcess(pid, name) {
+  if (!pid) return Promise.resolve();
+  return new Promise((resolve) => {
+    try { process.kill(pid, "SIGINT"); } catch {}
+
+    const timeout = setTimeout(() => {
+      try { process.kill(pid, "SIGKILL"); } catch {}
+    }, 3000);
+
+    exec(`taskkill /pid ${pid} /f /t`, (err) => {
+      clearTimeout(timeout);
+      if (err) console.warn(`${name} taskkill failed:`, err.message);
+      else console.log(`${name} killed via taskkill`);
+      resolve();
     });
-  }
+  });
+}
 
-  if (pythonProcess) {
-    console.log("Stopping FastAPI...");
-    exec(
-      `taskkill /pid ${pythonProcess.pid} /f /t`,
-      (error, stdout, stderr) => {
-        if (error) console.error(`Error stopping FastAPI: ${error}`);
-        if (stderr) console.error(`FastAPI Shutdown Error: ${stderr}`);
-        if (stdout) console.log(`FastAPI Shutdown: ${stdout}`);
-      },
-    );
-  }
 
-  if (process.platform !== "darwin") {
-    app.quit();
+function killPort(port) {
+  return new Promise((resolve) => {
+    exec(`netstat -ano | findstr :${port} `, (err, stdout) => {
+      if (err || !stdout) return resolve();
+
+      const pids = [...new Set(
+        stdout.split("\n")
+          .map(line => line.trim().split(/\s+/).pop())
+          .filter(pid => pid && /^\d+$/.test(pid))
+      )];
+
+      if (!pids.length) return resolve();
+
+      const kills = pids.map(pid =>
+        new Promise(res => {
+          exec(`taskkill /pid ${pid} /f /t`, () => res());
+        })
+      );
+
+      Promise.all(kills).then(resolve);
+    });
+  });
+}
+
+app.on("window-all-closed", async () => {
+  console.log("App closing, cleaning up child processes...");
+
+  try {
+    if (mysqlProcess) {
+      console.log("Stopping MySQL...");
+      await killProcess(mysqlProcess.pid, "MySQL");
+      await killPort(3308); 
+    }
+
+    if (pythonProcess) {
+      console.log("Stopping FastAPI...");
+      await killProcess(pythonProcess.pid, "FastAPI");
+      await killPort(8000);
+    }
+
+    console.log("All child processes cleaned up.");
+  } catch (err) {
+    console.error("Error during shutdown:", err);
+  } finally {
+    if (process.platform !== "darwin") {
+      app.quit();
+    }
   }
 });
 

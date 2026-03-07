@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Union, Optional
+from typing import Dict, Union, Optional
 
 #define schemas for data transfer(how data should be structured.)
 
@@ -14,6 +14,7 @@ class StockItem(BaseModel):
     hsn_code: Optional[str] = "62092000"
     taxable_amount: Optional[float] = None
     tax_amount: Optional[float] = None    
+    custom_fields: Optional[Dict[str, str]] = None
 
     def to_dict(self):
         return {
@@ -27,6 +28,7 @@ class StockItem(BaseModel):
             'hsn_code': self.hsn_code,
             'taxable_amount': self.taxable_amount,
             'tax_amount': self.tax_amount,
+            'custom_fields': self.custom_fields
         }
 
 class ReturnedItem(BaseModel):
