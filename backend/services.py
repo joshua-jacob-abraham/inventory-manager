@@ -10,6 +10,7 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib import colors
 import re
+from datetime import datetime
 
 temp_stock_data = {}
 
@@ -17,6 +18,14 @@ def safe_identifier(value):
     if not re.match(r'^[a-zA-Z0-9_]+$', value):
         raise ValueError("Invalid identifier")
     return value
+
+def ordinal(n):
+    if 11 <= n % 100 <= 13:
+        return f"{n}th"
+    else:
+        return f"{n}{['th','st','nd','rd','th','th','th','th','th','th'][n % 10]}"
+    
+    
 
 def is_valid_name(name: str) -> bool:
     return bool(re.match(r'^[a-zA-Z0-9_]+$', name))
@@ -238,33 +247,46 @@ def get_code_details(design_code: str, connection):
         cursor.close()       
 
 #view action on a date
-def lookup(store_name : str, date : str, action : str, connection):
+def lookup(store_name: str, date: str, action: str, connection):
     store_name = make_valid_table_name(store_name)
-    cursor = connection.cursor(dictionary = True)
-    
-    date_obj = datetime.strptime(date,"%Y-%m-%d")
+    cursor = connection.cursor(dictionary=True)
+
+    date_obj = datetime.strptime(date, "%Y-%m-%d")
     formatted_date = date_obj.strftime("%d_%b_%Y")
-    
-    the_table = ""
+
     if action == "new":
         the_table = f"{store_name}_{formatted_date}_new_stock"
     elif action == "return":
-        the_table = f"{store_name}_{formatted_date}_return_stock"  
+        the_table = f"{store_name}_{formatted_date}_return_stock"
     elif action == "sales":
         the_table = f"{store_name}_{formatted_date}_sales_stock"
 
     try:
         cursor.execute(f"""SELECT 
-            DESIGN_CODE AS design_code, 
+            ITEM AS item,
+            DESIGN_CODE AS design_code,
+            HSN_CODE AS hsn_code,
             SIZE AS size, 
             SP_PER_ITEM AS sp_per_item, 
             QTY AS qty, 
             GST_RATE AS gst_rate, 
             TAXABLE_AMOUNT_PER_ITEM AS taxable_amount, 
-            TAX_AMOUNT_PER_ITEM AS tax_amount 
+            TAX_AMOUNT_PER_ITEM AS tax_amount,
+            CUSTOM_FIELDS AS custom_fields
             FROM {the_table};""")
-        shelf = cursor.fetchall()
-        return shelf
+        rows = cursor.fetchall()
+
+        for row in rows:
+            cf = row.pop("custom_fields", None)
+            if cf:
+                try:
+                    parsed = json.loads(cf) if isinstance(cf, str) else cf
+                    if isinstance(parsed, dict):
+                        row.update(parsed)
+                except:
+                    pass
+
+        return rows
     except ms.errors.ProgrammingError as e:
         if e.errno == 1146:
             return None
@@ -387,33 +409,36 @@ def clear_temp_data(store_key: str):
     return temp_stock_data[store_key]
 
 #lookupforprint
-def lookupforprint(store_name : str, date : str, action : str, connection):
+def lookupforprint(store_name: str, date: str, action: str, connection):
     store_name = make_valid_table_name(store_name)
+    cursor = connection.cursor(dictionary=True)
 
-    cursor = connection.cursor(dictionary = True)
-    
-    date_obj = datetime.strptime(date,"%Y-%m-%d")
+    date_obj = datetime.strptime(date, "%Y-%m-%d")
     formatted_date = date_obj.strftime("%d_%b_%Y")
-    
-    the_table = ""
+
     if action == "new":
         the_table = f"{store_name}_{formatted_date}_new_stock"
     elif action == "return":
-        the_table = f"{store_name}_{formatted_date}_return_stock"    
+        the_table = f"{store_name}_{formatted_date}_return_stock"
+    elif action == "sales":
+        the_table = f"{store_name}_{formatted_date}_sales_stock"
+    else:
+        return None
 
     try:
         cursor.execute(f"""SELECT 
             ITEM AS item,
             DESIGN_CODE AS design_code, 
+            HSN_CODE AS hsn_code,
             SIZE AS size, 
             SP_PER_ITEM AS sp_per_item, 
             QTY AS qty, 
             GST_RATE AS gst_rate, 
             TAXABLE_AMOUNT_PER_ITEM AS taxable_amount, 
-            TAX_AMOUNT_PER_ITEM AS tax_amount 
+            TAX_AMOUNT_PER_ITEM AS tax_amount,
+            CUSTOM_FIELDS AS custom_fields
             FROM {the_table};""")
-        shelf = cursor.fetchall()
-        return shelf
+        return cursor.fetchall()
     except ms.errors.ProgrammingError as e:
         if e.errno == 1146:
             return None

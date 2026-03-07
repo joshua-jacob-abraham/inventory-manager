@@ -55,7 +55,14 @@ function ViewStock() {
     const filtered = stores.filter((store) =>
       store.toLowerCase().includes(value.toLowerCase()),
     );
-    setFilteredStores(filtered);
+    if (
+      filtered.length === 1 &&
+      filtered[0].toLowerCase() === value.toLowerCase()
+    ) {
+      setFilteredStores([]);
+    } else {
+      setFilteredStores(filtered);
+    }
   };
 
   const [shouldFetchRecord, setShouldFetchRecord] = useState(false);
@@ -103,6 +110,79 @@ function ViewStock() {
     }
   };
 
+  const [showColumnMenu, setShowColumnMenu] = useState(false);
+  const [availableColumns, setAvailableColumns] = useState([]);
+  const [selectedColumns, setSelectedColumns] = useState([]);
+  const [pendingColumns, setPendingColumns] = useState([]);
+  const [columnsLoading, setColumnsLoading] = useState(false);
+  const [columnsApplied, setColumnsApplied] = useState(false);
+
+  const INITIAL_COLUMNS = [
+    "design_code",
+    "sp_per_item",
+    "qty",
+    "size",
+    "taxable_amount_per_item",
+    "tax_amount_per_item",
+  ];
+
+  const LABEL_MAP = {
+    design_code: "Code",
+    sp_per_item: "Price",
+    qty: "Quantity",
+    size: "Size",
+    gst_rate: "GST Rate",
+    taxable_amount_per_item: "Taxable Amount",
+    tax_amount_per_item: "Tax Amount",
+    hsn_code: "HSN Code",
+    item: "Item",
+  };
+
+  const handleMenuClick = async () => {
+    if (!storeName || !fromDate || !action) {
+      alert("Please fill store name, date and action first.");
+      return;
+    }
+
+    setColumnsLoading(true);
+    try {
+      const res = await axios.get(
+        `http://localhost:8000/columns/${brandName}`,
+        {
+          params: { store_name: storeName, date: fromDate, action },
+        },
+      );
+
+      const fixed = res.data.fixed_columns.map((col) => ({
+        key: col.toLowerCase(),
+        label: LABEL_MAP[col.toLowerCase()] || col,
+        isCustom: false,
+      }));
+
+      const custom = res.data.custom_field_keys.map((key) => ({
+        key,
+        label: key.charAt(0).toUpperCase() + key.slice(1),
+        isCustom: true,
+      }));
+
+      const all = [...fixed, ...custom];
+      setAvailableColumns(all);
+      setSelectedColumns(INITIAL_COLUMNS);
+      setPendingColumns(INITIAL_COLUMNS);
+      setShowColumnMenu(true);
+    } catch (err) {
+      alert("Could not fetch columns.");
+    } finally {
+      setColumnsLoading(false);
+    }
+  };
+
+  const togglePending = (key) => {
+    setPendingColumns((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
+    );
+  };
+
   const handlePrintExcel = async () => {
     try {
       setLoading(true);
@@ -113,7 +193,11 @@ function ViewStock() {
           params: {
             store_name: storeName,
             date: fromDate,
-            action: action,
+            action,
+            selected_columns:
+              columnsApplied && selectedColumns.length
+                ? selectedColumns.join(",")
+                : undefined,
           },
           responseType: "blob",
         },
@@ -122,9 +206,7 @@ function ViewStock() {
       const excelBlob = new Blob([response.data], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
-
       const excelUrl = URL.createObjectURL(excelBlob);
-
       const a = document.createElement("a");
       a.href = excelUrl;
       a.download = `${storeName}_${fromDate}_${action}_stock.xlsx`;
@@ -133,11 +215,6 @@ function ViewStock() {
       document.body.removeChild(a);
       URL.revokeObjectURL(excelUrl);
     } catch (error) {
-      console.error(
-        "Error exporting to Excel:",
-        error.response?.data || error.message,
-      );
-      setLoading(false);
       alert("Failed to save Excel file.");
     } finally {
       setLoading(false);
@@ -302,7 +379,7 @@ function ViewStock() {
           GET
         </button>
 
-        <div className="excelOps">
+        <div className="excelOps" style={{ position: "relative" }}>
           <button
             className="printExcel"
             onClick={handlePrintExcel}
@@ -311,9 +388,90 @@ function ViewStock() {
             Save as Excel
           </button>
 
-          <button className="action">
+          <button
+            className="action"
+            onClick={handleMenuClick}
+            disabled={columnsLoading}
+          >
             <img className="excelMenu" src={excelMenu} alt="excelMenu" />
           </button>
+
+          {showColumnMenu && (
+            <div
+              className="column-menu"
+              style={{
+                position: "absolute",
+                top: "110%",
+                right: 0,
+                background: "#fff",
+                border: "1px solid #ccc",
+                borderRadius: "8px",
+                padding: "12px",
+                zIndex: 100,
+                minWidth: "200px",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: "8px",
+                }}
+              >
+                <strong style={{
+                  userSelect : "none",
+                }}>Select Columns</strong>
+                <button
+                  onClick={() => setShowColumnMenu(false)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: "16px",
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {availableColumns.map((col) => (
+                <label
+                  key={col.key}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    marginBottom: "6px",
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={pendingColumns.includes(col.key)}
+                    onChange={() => togglePending(col.key)}
+                  />
+                  {col.label}
+                  {col.isCustom && (
+                    <span style={{ fontSize: "12px", color: "#888" }}>
+                      (custom)
+                    </span>
+                  )}
+                </label>
+              ))}
+
+              <button
+                className="apply"
+                onClick={() => {
+                  setSelectedColumns(pendingColumns);
+                  setColumnsApplied(true);
+                  setShowColumnMenu(false);
+                }}
+              >
+                Apply
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="viewedItems">
@@ -326,7 +484,11 @@ function ViewStock() {
             </Suspense>
           ) : (
             <Suspense fallback={null}>
-              <ViewedItemsTable data={retrievedData} isDisabled={isDisabled} />
+              <ViewedItemsTable
+                data={retrievedData}
+                isDisabled={isDisabled}
+                selectedColumns={columnsApplied ? selectedColumns : null}
+              />
             </Suspense>
           )}
         </div>

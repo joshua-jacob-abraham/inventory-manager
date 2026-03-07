@@ -299,7 +299,10 @@ function NewStock() {
       const customFieldsObject = Object.fromEntries(
         customFields
           .filter((field) => field.value.trim() !== "")
-          .map((field) => [field.name, field.value]),
+          .map((field) => [
+            field.name,
+            field.value.trim().replace(/\b\w/g, (c) => c.toUpperCase()),
+          ]),
       );
 
       const payload = {
@@ -539,7 +542,7 @@ function NewStock() {
             onFocus={() => setSuggest(true)}
             onBlur={handleStoreBlur}
             onKeyDown={(e) => {
-              if(e.key === "Enter") handleStoreBlur(e);
+              if (e.key === "Enter") handleStoreBlur(e);
             }}
           />
 

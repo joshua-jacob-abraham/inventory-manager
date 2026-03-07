@@ -6,7 +6,7 @@ import mysql.connector as ms
 from fastapi.middleware.cors import CORSMiddleware
 from crud import insert_into_records
 from models import StockItem,ReturnedItem
-from services import add_to_stores, clear_temp_data, get_code_details, is_valid_name, lookupRange, make_valid_table_name, reverse_table_name, set_custom_field_definitions, submit_new_stock,add_design_temp,temp_stock_data,from_shelf,lookup,add_design_temp_return,submit_returned_stock,remove_from_temp,lookupforprint,submit_sales_stock, safe_identifier
+from services import add_to_stores, clear_temp_data, get_code_details, is_valid_name, lookupRange, make_valid_table_name, ordinal, reverse_table_name, set_custom_field_definitions, submit_new_stock,add_design_temp,temp_stock_data,from_shelf,lookup,add_design_temp_return,submit_returned_stock,remove_from_temp,lookupforprint,submit_sales_stock, safe_identifier
 from database import get_db_connection
 from datetime import datetime
 from openpyxl.styles import Font, Alignment
@@ -395,105 +395,189 @@ async def clearTemp(store_key: str = Query(...)):
         "data": temp_data,
     }
 
+#select columns
+@app.get("/columns/{brand_name}")
+async def get_columns(
+    brand_name: str,
+    store_name: str = Query(...),
+    date: str = Query(...),
+    action: str = Query(...)
+):
+    date_obj = datetime.strptime(date, "%Y-%m-%d")
+    formatted_date = date_obj.strftime("%d_%b_%Y")
+
+    brand_name = safe_identifier(make_valid_table_name(brand_name))
+    store_name = safe_identifier(make_valid_table_name(store_name))
+
+    if action == "new":
+        table_name = f"{store_name}_{formatted_date}_new_stock"
+    elif action == "return":
+        table_name = f"{store_name}_{formatted_date}_return_stock"
+    elif action == "sales":
+        table_name = f"{store_name}_{formatted_date}_sales_stock"
+    else:
+        raise HTTPException(status_code=400, detail="Invalid action")
+
+    try:
+        connection = get_db_connection(brand_name)
+        cursor = connection.cursor(dictionary=True)
+
+        cursor.execute(f"SELECT * FROM `{table_name}` LIMIT 1")
+        row = cursor.fetchone()
+        cursor.close()
+        connection.close()
+
+        if not row:
+            raise HTTPException(status_code=404, detail="No data found.")
+
+        fixed_columns = []
+        custom_field_keys = []
+
+        for key, value in row.items():
+            lower = key.lower()
+            if lower == "custom_fields":
+                # parse the dict and extract keys
+                try:
+                    cf = json.loads(value) if isinstance(value, str) else value
+                    if isinstance(cf, dict):
+                        custom_field_keys = list(cf.keys())
+                except:
+                    pass
+            else:
+                fixed_columns.append(key)
+
+        return {
+            "fixed_columns": fixed_columns,
+            "custom_field_keys": custom_field_keys
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 #print excel
 @app.post("/printExcel/{brand_name}")
 async def print_table_excel(
-	brand_name: str,
-	store_name: str = Query(...),
-	date: str = Query(...),
-	action: str = Query(...)
+    brand_name: str,
+    store_name: str = Query(...),
+    date: str = Query(...),
+    action: str = Query(...),
+    selected_columns: str = Query(default=None)  # comma-separated
 ):
-	date_obj = datetime.strptime(date, "%Y-%m-%d")
-	formatted_date = date_obj.strftime("%d_%b_%Y")
+    # Parse and format date
+    date_obj = datetime.strptime(date, "%Y-%m-%d")
+    formatted_date = date_obj.strftime("%d_%b_%Y")
+    readable = f"{ordinal(date_obj.day)} {date_obj.strftime('%b')}, {date_obj.year}"
 
-	brand_name = safe_identifier(make_valid_table_name(brand_name))
-	store_name = safe_identifier(make_valid_table_name(store_name))
+    # Sanitize brand and store names
+    brand_name = safe_identifier(make_valid_table_name(brand_name))
+    store_name = safe_identifier(make_valid_table_name(store_name))
 
-	connection = get_db_connection(brand_name)
+    # Get data from database
+    connection = get_db_connection(brand_name)
+    stock_data = lookupforprint(store_name, date, action, connection)
 
-	stock_data = lookupforprint(store_name, date, action, connection)
+    if not stock_data:
+        raise HTTPException(status_code=404, detail="No stock data found.")
 
-	if stock_data is None or not stock_data:
-			raise HTTPException(status_code=404, detail="No stock data found for the specified parameters.")
+    # Flatten custom_fields into top-level keys
+    for item in stock_data:
+        if "custom_fields" in item and item["custom_fields"]:
+            try:
+                cf = (
+                    json.loads(item["custom_fields"])
+                    if isinstance(item["custom_fields"], str)
+                    else item["custom_fields"]
+                )
+                if isinstance(cf, dict):
+                    for k, v in cf.items():
+                        item[k] = v
+            except:
+                pass
 
-	has_gst = any(float(item.get("gst_rate", 0)) > 0 for item in stock_data)
+    # Define default columns
+    all_possible = [
+        ("item", "Item"),
+        ("design_code", "Code"),
+        ("hsn_code", "HSN Code"),
+        ("size", "Size"),
+        ("sp_per_item", "Price"),
+        ("qty", "Qty"),
+        ("gst_rate", "GST Rate"),
+        ("taxable_amount", "Taxable"),
+        ("tax_amount", "Tax"),
+    ]
 
-	columns = [
-			("item", "ITEM"),
-			("design_code", "CODE"),
-			("size", "SIZE"),
-			("sp_per_item", "PRICE"),
-			("qty", "QUANTITY"),
-	]
+    # Add custom fields from first record
+    first = stock_data[0]
+    for key in first.keys():
+        if key not in [c[0] for c in all_possible] and key != "custom_fields":
+            all_possible.append((key, key.title()))
 
-	if has_gst:
-			columns += [
-					("gst_rate", "GST_RATE"),
-					("taxable_amount", "TAXABLE"),
-					("tax_amount", "TAX"),
-			]		
+    # Select columns based on user input or GST presence
+    if selected_columns:
+        chosen = selected_columns.split(",")
+        columns = [(k, label) for k, label in all_possible if k in chosen]
+    else:
+        has_gst = any(float(item.get("gst_rate", 0) or 0) > 0 for item in stock_data)
+        columns = [
+            c for c in all_possible if c[0] not in ("gst_rate", "taxable_amount", "tax_amount")
+        ] if not has_gst else all_possible
 
-	df = pd.DataFrame(stock_data)
-	df = df[[col[0] for col in columns]]
-	df.columns = [col[1] for col in columns]
-	df.index = range(1, len(df) + 1)
+    # Prepare DataFrame
+    df = pd.DataFrame(stock_data)
+    available = [c for c in columns if c[0] in df.columns]
+    df = df[[c[0] for c in available]]
+    df.columns = [c[1] for c in available]
+    df.index = range(1, len(df) + 1)
 
-	excel_bytes_io = io.BytesIO()
+    # Write Excel to BytesIO
+    excel_bytes_io = io.BytesIO()
+    with pd.ExcelWriter(excel_bytes_io, engine="openpyxl") as writer:
+        sheet_name = "Stock Data"
+        df.to_excel(writer, index=True, startrow=3, sheet_name=sheet_name, index_label="S.No")
 
-	with pd.ExcelWriter(excel_bytes_io, engine='openpyxl') as writer:
-			sheet_name = "Stock Data"
-			df.to_excel(writer, index=True, startrow=3, sheet_name=sheet_name, index_label="S.No")
+        workbook = writer.book
+        worksheet = writer.sheets[sheet_name]
 
-			workbook = writer.book
-			worksheet = writer.sheets[sheet_name]
+        # Add headers
+        worksheet["C1"] = brand_name.title()
+        worksheet["D1"] = store_name.title()
+        worksheet["E2"] = readable
+        worksheet["F2"] = f"{action.title()} Stocks"
 
-			worksheet["C1"] = brand_name.upper()
-			worksheet["D1"] = store_name.upper()
-			worksheet["D2"] = formatted_date.upper()
-			worksheet["E2"] = f"{action.upper()} STOCKS"
+        for cell_ref in ["C1", "D1"]:
+            worksheet[cell_ref].alignment = Alignment(horizontal="center", vertical="center")
 
-			for cell in ["C1", "D1"]:
-				worksheet[cell].font = Font(bold=False)
-				worksheet[cell].alignment = Alignment(horizontal="center", vertical="center")
-	
-			column_widths = {
-					"A": 12,  # S.No
-					"B": 14,  # item
-					"C": 18,  # design_code
-					"D": 14,  # size
-					"E": 14,  # sp_per_item
-					"F": 10,  # qty
-					"G": 11,  # gst_rate
-					"H": 18,  # taxable_amount
-					"I": 18   # tax_amount
-			}
+        # Set column widths
+        for i, col_letter in enumerate("ABCDEFGHIJKLMNOP"[:len(available) + 1]):
+            worksheet.column_dimensions[col_letter].width = 16
 
-			for col, width in column_widths.items():
-				worksheet.column_dimensions[col].width = width
+        # Apply border and alignment
+        thin_border = Border(
+            left=Side(style="thin", color="000000"),
+            right=Side(style="thin", color="000000"),
+            top=Side(style="thin", color="000000"),
+            bottom=Side(style="thin", color="000000")
+        )
 
-			thin_border = Border(
-				left=Side(style="thin", color="000000"),
-				right=Side(style="thin", color="000000"),
-				top=Side(style="thin", color="000000"),
-				bottom=Side(style="thin", color="000000")
-			)		
+        for row in worksheet.iter_rows(
+            min_row=1, max_row=worksheet.max_row, min_col=1, max_col=len(available) + 1
+        ):
+            for cell in row:
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+                cell.border = thin_border
 
-			max_column = 9 if has_gst else 6
+    excel_bytes_io.seek(0)
 
-			for row in worksheet.iter_rows(min_row=1, max_row=worksheet.max_row, min_col=1, max_col=max_column):
-				for cell in row:
-						cell.alignment = Alignment(horizontal="center", vertical="center")
-						cell.border = thin_border
-	
-	excel_bytes_io.seek(0)
-
-	return StreamingResponse(
-			excel_bytes_io,
-			media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-			headers={
-					"Content-Disposition": f"attachment; filename={store_name}_{formatted_date}_{action}_stock.xlsx"
-			}
-	)
+    return StreamingResponse(
+        excel_bytes_io,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": f"attachment; filename={store_name}_{formatted_date}_{action}_stock.xlsx"
+        }
+    )
 
 if __name__ == "__main__":
     import uvicorn
