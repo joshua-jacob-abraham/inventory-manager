@@ -105,16 +105,15 @@ function NewStock() {
   };
 
   const handleAddCustomField = () => {
-    const value = newFieldInput.trim();
-    const formatted = value.charAt(0).toUpperCase() + value.slice(1);
+    const fieldValue = newFieldInput.trim();
 
     if (
-      formatted !== "" &&
+      fieldValue !== "" &&
       !customFields.some(
-        (field) => field.name.toLowerCase() === formatted.toLowerCase(),
+        (field) => field.name.toLowerCase() === fieldValue.toLowerCase(),
       )
     ) {
-      setCustomFields((prev) => [...prev, { name: formatted, value: "" }]);
+      setCustomFields((prev) => [...prev, { name: fieldValue, value: "" }]);
     }
     setNewFieldInput("");
     setAddingCustomField(false);
@@ -287,6 +286,12 @@ function NewStock() {
         data.item.charAt(0).toUpperCase() + data.item.slice(1).toLowerCase();
       const upperDesignCode = completeDesignCode.toUpperCase();
 
+      const customFieldsObject = Object.fromEntries(
+        customFields
+          .filter((field) => field.value.trim() !== "")
+          .map((field) => [field.name, field.value]),
+      );
+
       const payload = {
         item: capitalizedItem,
         design_code: upperDesignCode,
@@ -298,6 +303,7 @@ function NewStock() {
         hsn_code: item.hsn_code || "62092000",
         taxable_amount: item.taxable_amount || null,
         tax_amount: item.tax_amount || 0,
+        custom_fields: customFieldsObject,
       };
 
       console.log(payload);
@@ -463,7 +469,7 @@ function NewStock() {
   const change = Math.ceil(visibleFields / 3);
   const tableRowStart = baseRow + change;
 
-  const isShowable = (visibleFields) % 3 != 0;
+  const isShowable = visibleFields % 3 != 0;
 
   return (
     <div className="dashboard">
@@ -663,7 +669,7 @@ function NewStock() {
             className="customFieldInputDeco"
             style={{
               gridRow: `${tableRowStart - 1}`,
-              gridColumn: `${((visibleFields % 3) + 1)} / span ${3 - (visibleFields % 3)}`,
+              gridColumn: `${(visibleFields % 3) + 1} / span ${3 - (visibleFields % 3)}`,
             }}
           ></div>
         )}
